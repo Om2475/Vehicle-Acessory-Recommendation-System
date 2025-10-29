@@ -1,0 +1,206 @@
+Car_ID,Brand,Model,Fuel_Type,Transmission,Year,Engine_Size_L,Seats,Body_Type,Price_Range_Lakh,Brand_Normalized
+1,Aston Martin,Vantage,Petrol,AT,2025,4.0,2,Coupe,399.00-450.00,aston martin
+3,Aston Martin,DBX,Petrol,AT,2025,4.0,5,SUV,550.00-650.00,aston martin
+4,Audi,Q8 e-tron,Electric,AT,2025,0.0,5,Electric SUV,115.00-127.00,audi
+5,Audi,Q8,Petrol,AT,2025,3.0,5,Premium SUV,117.00-125.00,audi
+6,Audi,RS 5,Petrol,AT,2025,2.9,4,Coupe,150.00-170.00,audi
+7,Audi,A8,Petrol,AT,2025,3.0,5,Sedan,156.00-175.00,audi
+8,Audi,e-tron GT,Electric,AT,2025,0.0,4,Electric Coupe,172.00-205.00,audi
+9,Audi,RS Q8,Petrol,AT,2025,4.0,5,Performance SUV,220.00-250.00,audi
+10,Audi,A3,Petrol,DCT,2025,1.4,5,Sedan,38.00-42.00,audi
+11,Audi,Q3,Petrol,DCT,2025,2.0,5,Compact SUV,45.24-55.64,audi
+12,Audi,A4,Petrol,DCT,2025,2.0,5,Sedan,47.93-57.11,audi
+13,Audi,A6,Petrol,DCT,2025,2.0,5,Sedan,66.05-72.43,audi
+14,Audi,Q5,Petrol,DCT,2025,2.0,5,Mid-size SUV,68.00-73.79,audi
+15,Audi,TT,Petrol,DCT,2025,2.0,4,Coupe,70.00-80.00,audi
+16,Audi,Q4 e-tron,Electric,AT,2025,0.0,5,Electric SUV,70.00-80.00,audi
+17,Audi,Q7,Petrol,AT,2025,3.0,7,Premium SUV,96.17-106.22,audi
+18,BMW,X5,Petrol,AT,2025,3.0,7,Premium SUV,112.50-129.50,bmw
+19,BMW,X6,Petrol,AT,2025,3.0,5,Coupe SUV,120.00-140.00,bmw
+20,BMW,X7,Petrol,AT,2025,3.0,7,Premium SUV,131.00-135.00,bmw
+21,BMW,iX,Electric,AT,2025,0.0,5,Electric SUV,136.50-156.50,bmw
+22,BMW,M3,Petrol,AT,2025,3.0,5,Sedan,150.00-160.00,bmw
+23,BMW,M4,Petrol,AT,2025,3.0,4,Coupe,155.00-165.00,bmw
+24,BMW,7 Series,Petrol,AT,2025,3.0,5,Sedan,184.00-187.00,bmw
+25,BMW,M5,Petrol,AT,2025,4.4,5,Sedan,199,bmw
+26,BMW,8 Series,Petrol,AT,2025,3.0,4,Coupe,200.00-220.00,bmw
+27,BMW,i7,Electric,AT,2025,0.0,5,Electric Sedan,224.00-250.00,bmw
+28,BMW,2 Series Gran Coupe,Petrol,AT,2025,1.5,5,Sedan,46.90-48.90,bmw
+29,BMW,iX1,Electric,AT,2025,0.0,5,Electric SUV,49.00-53.00,bmw
+30,BMW,X1,Petrol,DCT,2025,1.5,5,Compact SUV,50.80-54.30,bmw
+31,BMW,3 Series Long Wheelbase,Petrol,AT,2025,2.0,5,Sedan,62.00-65.00,bmw
+32,BMW,i4,Electric,AT,2025,0.0,5,Electric Sedan,72.50-78.50,bmw
+33,BMW,5 Series,Petrol,AT,2025,2.0,5,Sedan,72.90-99.90,bmw
+34,BMW,X3,Petrol,AT,2025,2.0,5,Mid-size SUV,74.90-84.50,bmw
+35,BMW,3 Series,Petrol,AT,2025,2.0,5,Sedan,75.90-76.90,bmw
+36,BMW,X4,Petrol,AT,2025,2.0,5,Coupe SUV,85.00-95.00,bmw
+37,BMW,Z4,Petrol,AT,2025,2.0,2,Convertible,89.30-94.90,bmw
+38,BMW,i5,Electric,AT,2025,0.0,5,Electric Sedan,95.00-105.00,bmw
+39,BYD,Atto 3,Electric,AT,2025,0.0,5,Electric SUV,24.99-33.99,byd
+40,BYD,e6,Electric,AT,2025,0.0,7,Electric MUV,29.99-33.99,byd
+41,Bentley,Continental GT,Petrol,DCT,2025,6.0,4,Coupe,400.00-700.00,bentley
+46,Citroen,eC3,Electric,AT,2025,0.0,5,Electric Hatchback,11.50-12.75,citroen
+48,Citroen,C3 Aircross,Petrol,MANUAL/AT,2025,1.2,7,Mid-size SUV,9.99-17.60,citroen
+49,Ferrari,Portofino,Petrol,DCT,2025,3.9,4,Convertible,350.00-380.00,ferrari
+50,Ferrari,Roma,Petrol,DCT,2025,3.9,4,Coupe,376.00-400.00,ferrari
+51,Ferrari,F8 Tributo,Petrol,DCT,2025,3.9,2,Coupe,402.00-430.00,ferrari
+52,Ferrari,812 Superfast,Petrol,DCT,2025,6.5,2,Coupe,600.00-650.00,ferrari
+53,Ferrari,SF90 Stradale,Hybrid,DCT,2025,4.0,2,Coupe,750.00-800.00,ferrari
+58,Honda,Elevate,Petrol,MANUAL/CVT,2025,1.5,5,Mid-size SUV,11.91-16.83,honda
+59,Honda,City,Petrol,MANUAL/CVT,2025,1.5,5,Sedan,12.38-16.65,honda
+60,Honda,City Hybrid,Hybrid,CVT,2025,1.5,5,Sedan,19.9,honda
+61,Honda,Amaze 2nd Gen,Petrol,MANUAL/CVT,2025,1.2,5,Sedan,7.63-8.53,honda
+62,Honda,Amaze,Petrol,MANUAL/CVT,2025,1.2,5,Sedan,8.10-11.20,honda
+63,Hyundai,Verna,Petrol,MANUAL/CVT,2025,1.5,5,Sedan,11.07-17.58,hyundai
+64,Hyundai,Creta,Petrol,MANUAL/CVT/AT,2025,1.5,5,Mid-size SUV,11.11-20.50,hyundai
+65,Hyundai,Venue N Line,Petrol,MANUAL/DCT,2025,1.0,5,Compact SUV,12.08-13.90,hyundai
+66,Hyundai,Alcazar,Petrol,MANUAL/DCT/AT,2025,1.5,7,Mid-size SUV,14.99-21.55,hyundai
+67,Hyundai,Creta N Line,Petrol,MANUAL/DCT,2025,1.5,5,Mid-size SUV,16.82-20.45,hyundai
+68,Hyundai,Tucson,Petrol,AT,2025,2.0,5,Premium SUV,29.02-35.94,hyundai
+69,Hyundai,Ioniq 5,Electric,AT,2025,0.0,5,Electric SUV,46.05,hyundai
+70,Hyundai,Grand i10 Nios,Petrol/CNG,MANUAL/AMT,2025,1.2,5,Hatchback,5.92-8.96,hyundai
+71,Hyundai,Exter,Petrol/CNG,MANUAL/AMT,2025,1.2,5,Micro SUV,6.00-10.51,hyundai
+72,Hyundai,Aura,Petrol/CNG,MANUAL/AMT,2025,1.2,5,Sedan,6.54-9.11,hyundai
+73,Hyundai,i20,Petrol,MANUAL/CVT,2025,1.2,5,Hatchback,7.51-11.25,hyundai
+74,Hyundai,Venue,Petrol,MANUAL/DCT/AMT,2025,1.2,5,Compact SUV,7.94-13.62,hyundai
+75,Hyundai,i20 N Line,Petrol,MANUAL/DCT,2025,1.0,5,Hatchback,9.99-12.52,hyundai
+76,Jaguar,F-TYPE,Petrol,AT,2025,3.0,2,Convertible,115.00-135.00,jaguar
+77,Jaguar,I-PACE,Electric,AT,2025,0.0,5,Electric SUV,116.00-135.00,jaguar
+78,Jaguar,XJ,Petrol,AT,2025,3.0,5,Sedan,125.00-145.00,jaguar
+79,Jaguar,XE,Petrol,AT,2025,2.0,5,Sedan,73.00-85.00,jaguar
+80,Jaguar,XF,Petrol,AT,2025,2.0,5,Sedan,78.50-89.90,jaguar
+81,Jaguar,F-PACE,Petrol,AT,2025,2.0,5,Mid-size SUV,89.90-125.00,jaguar
+82,Jeep,Compass,Petrol,MANUAL/AT,2025,1.4,5,Mid-size SUV,21.99-31.99,jeep
+83,Jeep,Meridian,Diesel,MANUAL/AT,2025,2.0,7,Mid-size SUV,29.90-38.45,jeep
+84,Jeep,Wrangler,Petrol,AT,2025,2.0,5,Premium SUV,67.65-68.94,jeep
+85,Kia,Seltos,Petrol,MANUAL/CVT/DCT,2025,1.5,5,Mid-size SUV,11.19-20.56,kia
+86,Kia,Carens,Petrol,MANUAL/AT,2025,1.5,7,MUV,11.41-13.26,kia
+87,Kia,Carnival,Diesel,AT,2025,2.2,8,Premium MUV,63.91,kia
+88,Kia,Sonet,Petrol,MANUAL/AMT/DCT,2025,1.2,5,Compact SUV,8.00-15.74,kia
+92,Lamborghini,Revuelto,Hybrid,DCT,2025,6.5,2,Coupe,889,lamborghini
+93,Land Rover,Defender,Petrol,AT,2025,2.0,5,Premium SUV,105.00-279.00,land rover
+94,Land Rover,Range Rover,Petrol,AT,2025,3.0,5,Premium SUV,248.00-275.00,land rover
+95,Land Rover,Range Rover Evoque,Petrol,AT,2025,2.0,5,Premium SUV,75.06-89.06,land rover
+96,Land Rover,Discovery Sport,Petrol,AT,2025,2.0,7,Premium SUV,78.90-89.90,land rover
+97,Land Rover,Range Rover Velar,Petrol,AT,2025,2.0,5,Premium SUV,84.90-89.90,land rover
+98,Lexus,RX,Hybrid,CVT,2025,3.5,7,Premium SUV,115.00-135.00,lexus
+99,Lexus,LS,Hybrid,CVT,2025,3.5,5,Sedan,189.00-239.00,lexus
+100,Lexus,NX,Hybrid,CVT,2025,2.5,5,Mid-size SUV,69.70-75.90,lexus
+101,Lexus,ES,Hybrid,CVT,2025,2.5,5,Sedan,76.50-82.50,lexus
+102,Lotus,Emira,Petrol,MANUAL/AT,2025,3.5,2,Coupe,200.00-250.00,lotus
+110,Mahindra,Thar,Petrol,MANUAL/AT,2025,2.0,4,Compact SUV,11.50-17.62,mahindra
+111,Mahindra,Thar ROXX,Petrol,MANUAL/AT,2025,2.0,5,Mid-size SUV,12.99-23.39,mahindra
+112,Mahindra,Scorpio,Diesel,MANUAL/AT,2025,2.2,9,Mid-size SUV,13.77-17.72,mahindra
+113,Mahindra,Scorpio N,Petrol,MANUAL/AT,2025,2.0,7,Mid-size SUV,13.99-25.15,mahindra
+114,Mahindra,XUV700,Petrol,MANUAL/AT,2025,2.0,7,Mid-size SUV,14.49-25.14,mahindra
+115,Mahindra,BE 6,Electric,AT,2025,0.0,5,Electric SUV,18.90-27.79,mahindra
+116,Mahindra,XEV 9e,Electric,AT,2025,0.0,5,Electric SUV,21.90-31.25,mahindra
+117,Mahindra,e2o Plus,Electric,AT,2025,0.0,4,Electric Hatchback,5.50-7.50,mahindra
+118,Mahindra,eKUV100,Electric,AT,2025,0.0,6,Electric MUV,8.25-10.75,mahindra
+119,Mahindra,Bolero,Diesel,MT,2025,1.5,9,MUV,9.81-10.93,mahindra
+120,Mahindra,Bolero Neo,Diesel,MT,2025,1.5,9,MUV,9.97-12.18,mahindra
+121,Maruti Suzuki,Ertiga Tour,Petrol/CNG,MT,2025,1.5,7,MUV,10.03-10.98,maruti suzuki
+122,Maruti Suzuki,Grand Vitara,Petrol/CNG,MANUAL/AT/CVT,2025,1.5,5,Mid-size SUV,11.42-20.68,maruti suzuki
+123,Maruti Suzuki,XL6,Petrol/CNG,MANUAL/AT,2025,1.5,6,MUV,11.94-14.99,maruti suzuki
+124,Maruti Suzuki,Jimny,Petrol,MANUAL/AT,2025,1.5,4,Compact SUV,12.76-14.96,maruti suzuki
+125,Maruti Suzuki,Invicto,Petrol,AT,2025,2.0,8,Premium MUV,25.51-29.22,maruti suzuki
+126,Maruti Suzuki,Alto K10,Petrol/CNG,MANUAL/AMT,2025,1.0,5,Hatchback,4.23-6.21,maruti suzuki
+127,Maruti Suzuki,S-Presso,Petrol/CNG,MANUAL/AMT,2025,1.0,5,Hatchback,4.26-6.12,maruti suzuki
+128,Maruti Suzuki,Alto Tour H1,Petrol/CNG,MT,2025,1.0,5,Hatchback,4.97-5.87,maruti suzuki
+129,Maruti Suzuki,Celerio,Petrol/CNG,MANUAL/AMT,2025,1.0,5,Hatchback,5.64-7.37,maruti suzuki
+130,Maruti Suzuki,Eeco,Petrol/CNG,MT,2025,1.2,7,MUV,5.70-6.96,maruti suzuki
+131,Maruti Suzuki,Wagon R Tour,Petrol/CNG,MT,2025,1.0,5,Hatchback,5.75-6.66,maruti suzuki
+132,Maruti Suzuki,Wagon R,Petrol/CNG,MANUAL/AMT,2025,1.2,5,Hatchback,5.79-7.62,maruti suzuki
+133,Maruti Suzuki,Eeco Cargo,Petrol/CNG,MT,2025,1.2,2,Commercial,5.84-7.17,maruti suzuki
+134,Maruti Suzuki,Ignis,Petrol,MANUAL/AMT,2025,1.2,5,Hatchback,5.85-8.12,maruti suzuki
+135,Maruti Suzuki,Swift,Petrol/CNG,MANUAL/AMT,2025,1.2,5,Hatchback,6.49-9.64,maruti suzuki
+136,Maruti Suzuki,Baleno,Petrol/CNG,MANUAL/CVT,2025,1.2,5,Hatchback,6.74-9.96,maruti suzuki
+137,Maruti Suzuki,Dzire Tour S,Petrol/CNG,MT,2025,1.2,5,Sedan,6.82-7.77,maruti suzuki
+138,Maruti Suzuki,Dzire,Petrol/CNG,MANUAL/AMT,2025,1.2,5,Sedan,6.84-10.19,maruti suzuki
+139,Maruti Suzuki,FRONX,Petrol/CNG,MANUAL/AMT,2025,1.2,5,Compact SUV,7.58-13.06,maruti suzuki
+140,Maruti Suzuki,Brezza,Petrol/CNG,MANUAL/AT,2025,1.5,5,Compact SUV,8.69-14.14,maruti suzuki
+141,Maruti Suzuki,Ertiga,Petrol/CNG,MANUAL/AT,2025,1.5,7,MUV,9.12-13.40,maruti suzuki
+142,Maruti Suzuki,Ciaz,Petrol,MANUAL/AT,2025,1.5,5,Sedan,9.41-12.31,maruti suzuki
+143,Maserati,Grecale,Petrol,AT,2025,2.0,5,SUV,125.00-175.00,maserati
+144,Maserati,Ghibli,Petrol,AT,2025,3.0,5,Sedan,150.00-180.00,maserati
+145,Maserati,Levante,Petrol,AT,2025,3.0,5,SUV,175.00-220.00,maserati
+146,Maserati,Quattroporte,Petrol,AT,2025,3.8,5,Sedan,200.00-250.00,maserati
+147,Maserati,GranTurismo,Petrol,AT,2025,4.7,4,Coupe,250.00-300.00,maserati
+148,Maserati,MC20,Petrol,DCT,2025,3.0,2,Coupe,350.00-400.00,maserati
+154,Mercedes-Benz,GLE Coupe,Petrol,AT,2025,3.0,5,Coupe SUV,110.00-130.00,mercedes benz
+155,Mercedes-Benz,GLS,Petrol,AT,2025,3.0,7,Premium SUV,118.00-148.00,mercedes benz
+156,Mercedes-Benz,EQS SUV,Electric,AT,2025,0.0,7,Electric SUV,128.00-143.00,mercedes benz
+157,Mercedes-Benz,EQE,Electric,AT,2025,0.0,5,Electric Sedan,141.00-151.00,mercedes benz
+158,Mercedes-Benz,EQE SUV,Electric,AT,2025,0.0,5,Electric SUV,141.00-151.00,mercedes benz
+159,Mercedes-Benz,EQS,Electric,AT,2025,0.0,5,Electric Sedan,155.00-165.00,mercedes benz
+160,Mercedes-Benz,S-Class,Petrol,AT,2025,3.0,5,Sedan,179.00-190.00,mercedes benz
+161,Mercedes-Benz,G-Class,Petrol,AT,2025,4.0,5,Premium SUV,242.00-298.00,mercedes benz
+162,Mercedes-Benz,AMG GT,Petrol,DCT,2025,4.0,2,Coupe,250.00-300.00,mercedes benz
+163,Mercedes-Benz,S-Class Maybach,Petrol,AT,2025,4.0,4,Ultra Luxury Sedan,283.00-360.00,mercedes benz
+164,Mercedes-Benz,GLS Maybach,Petrol,AT,2025,4.0,4,Ultra Luxury SUV,350.00-420.00,mercedes benz
+165,Mercedes-Benz,A-Class Limousine,Petrol,DCT,2025,1.3,5,Sedan,46.05-50.00,mercedes benz
+166,Mercedes-Benz,GLA,Petrol,DCT,2025,1.3,5,Compact SUV,51.75-56.15,mercedes benz
+167,Mercedes-Benz,C-Class,Petrol,AT,2025,1.5,5,Sedan,61.85-66.75,mercedes benz
+168,Mercedes-Benz,GLB,Petrol,DCT,2025,1.3,7,Compact SUV,63.80-66.90,mercedes benz
+169,Mercedes-Benz,EQA,Electric,AT,2025,0.0,5,Electric SUV,67.20-72.20,mercedes benz
+170,Mercedes-Benz,GLC,Petrol,AT,2025,2.0,5,Mid-size SUV,69.00-79.90,mercedes benz
+171,Mercedes-Benz,EQB,Electric,AT,2025,0.0,7,Electric SUV,72.20-78.90,mercedes benz
+172,Mercedes-Benz,E-Class,Petrol,AT,2025,2.0,5,Sedan,78.50-98.25,mercedes benz
+173,Mercedes-Benz,CLE Coupe,Petrol,AT,2025,2.0,4,Coupe,85.00-95.00,mercedes benz
+174,Mercedes-Benz,GLE,Petrol,AT,2025,2.0,7,Premium SUV,96.40-126.15,mercedes benz
+177,Nissan,X-Trail,Petrol,CVT,2025,1.5,7,Premium SUV,49.92-56.86,nissan
+178,Nissan,Magnite,Petrol,MANUAL/CVT,2025,1.0,5,Compact SUV,6.00-11.76,nissan
+179,Porsche,Macan EV,Electric,AT,2025,0.0,5,Electric SUV,122.00-135.00,porsche
+180,Porsche,Cayenne,Hybrid,AT,2025,3.0,5,Mid-size SUV,149.00-208.00,porsche
+191,Rolls-Royce,Wraith,Petrol,AT,2025,6.6,4,Coupe,650.00-750.00,rolls royce
+192,Rolls-Royce,Dawn,Petrol,AT,2025,6.6,4,Convertible,700.00-800.00,rolls royce
+193,Rolls-Royce,Ghost,Petrol,AT,2025,6.75,5,Sedan,750.00-850.00,rolls royce
+194,Rolls-Royce,Spectre,Electric,AT,2025,0.0,4,Electric Coupe,750.00-850.00,rolls royce
+195,Rolls-Royce,Cullinan,Petrol,AT,2025,6.75,5,SUV,800.00-950.00,rolls royce
+196,Rolls-Royce,Phantom,Petrol,AT,2025,6.75,5,Sedan,900.00-1000.00,rolls royce
+197,Skoda,Slavia,Petrol,MANUAL/AT,2025,1.0,5,Sedan,12.39-18.69,skoda
+198,Skoda,Kushaq,Petrol,MANUAL/AT,2025,1.0,5,Mid-size SUV,12.89-20.09,skoda
+199,Skoda,Superb,Petrol,AT,2025,2.0,5,Sedan,36.99-41.99,skoda
+200,Skoda,Kodiaq,Petrol,AT,2025,2.0,7,Premium SUV,45.99-52.99,skoda
+201,Skoda,Kylaq,Petrol,MANUAL/AT,2025,1.0,5,Compact SUV,8.25-13.99,skoda
+202,Tata,Curvv,Petrol,MANUAL/DCT/AT,2025,1.2,5,Mid-size SUV,10.00-19.52,tata
+203,Tata,Nexon Dark Edition,Petrol,MANUAL/AMT,2025,1.2,5,Compact SUV,12.00-16.00,tata
+204,Tata,Tigor EV,Electric,AT,2025,0.0,5,Electric Sedan,12.49-13.75,tata
+205,Tata,Nexon EV,Electric,AT,2025,0.0,5,Electric SUV,12.49-17.19,tata
+206,Tata,Harrier,Diesel,MANUAL/AT,2025,2.0,5,Mid-size SUV,15.00-26.69,tata
+207,Tata,Safari,Diesel,MANUAL/AT,2025,2.0,7,Mid-size SUV,15.50-27.44,tata
+208,Tata,Curvv EV,Electric,AT,2025,0.0,5,Electric SUV,17.49-22.24,tata
+209,Tata,Harrier EV,Electric,AT,2025,0.0,5,Electric SUV,21.49-30.23,tata
+210,Tata,Safari Gold Edition,Diesel,AT,2025,2.0,7,Mid-size SUV,26.00-28.00,tata
+211,Tata,Tiago,Petrol/CNG,MANUAL/AMT,2025,1.2,5,Hatchback,5.00-8.55,tata
+212,Tata,Punch,Petrol/CNG,MANUAL/AMT,2025,1.2,5,Micro SUV,6.00-10.32,tata
+213,Tata,Tigor,Petrol/CNG,MANUAL/AMT,2025,1.2,5,Sedan,6.00-9.55,tata
+214,Tata,Altroz,Petrol/Diesel/CNG,MANUAL/DCT,2025,1.2,5,Hatchback,6.89-11.49,tata
+215,Tata,Tiago NRG,Petrol/CNG,MANUAL/AMT,2025,1.2,5,Hatchback,7.30-8.85,tata
+216,Tata,Tiago EV,Electric,AT,2025,0.0,5,Electric Hatchback,7.99-11.14,tata
+217,Tata,Nexon,Petrol/Diesel/CNG,MANUAL/AMT/DCT,2025,1.2,5,Compact SUV,8.00-15.60,tata
+218,Tata,Altroz Racer,Petrol,MT,2025,1.2,5,Hatchback,9.49-10.99,tata
+219,Tata,Punch EV,Electric,AT,2025,0.0,5,Electric SUV,9.99-14.44,tata
+220,Tesla,Model 3,Electric,AT,2025,0.0,5,Electric Sedan,40.00-50.00,tesla
+221,Tesla,Model Y,Electric,AT,2025,0.0,7,Electric SUV,50.00-60.00,tesla
+222,Toyota,Rumion,Petrol/CNG,MANUAL/AT,2025,1.5,7,MUV,10.81-14.11,toyota
+223,Toyota,Urban Cruiser Hyryder,Hybrid,MANUAL/CVT,2025,1.5,5,Mid-size SUV,11.34-20.19,toyota
+224,Toyota,Vellfire,Hybrid,CVT,2025,2.5,7,Premium MUV,122.00-132.00,toyota
+225,Toyota,Innova Hycross,Hybrid,CVT,2025,2.0,8,MUV,19.20-32.58,toyota
+226,Toyota,Innova Crysta,Diesel,MANUAL/AT,2025,2.4,8,MUV,19.99-27.08,toyota
+227,Toyota,Land Cruiser 300,Petrol,AT,2025,3.5,8,Premium SUV,231.00-241.00,toyota
+228,Toyota,Hilux,Diesel,MANUAL/AT,2025,2.4,5,Pickup Truck,30.40-37.90,toyota
+229,Toyota,Fortuner,Petrol,MANUAL/AT,2025,2.7,7,Premium SUV,36.05-52.34,toyota
+230,Toyota,Fortuner Legender,Diesel,AT,2025,2.8,7,Premium SUV,44.51-50.09,toyota
+231,Toyota,Camry,Hybrid,CVT,2025,2.5,5,Sedan,48.5,toyota
+232,Toyota,Glanza,Petrol,MANUAL/AMT,2025,1.2,5,Hatchback,6.99-10.00,toyota
+233,Toyota,Taisor,Petrol/CNG,MANUAL/AMT,2025,1.2,5,Compact SUV,7.88-13.19,toyota
+234,Volkswagen,Virtus,Petrol,MANUAL/AT,2025,1.0,5,Sedan,11.56-19.40,volkswagen
+235,Volkswagen,Taigun,Petrol,MANUAL/AT,2025,1.0,5,Mid-size SUV,12.70-19.69,volkswagen
+236,Volkswagen,Tiguan,Petrol,AT,2025,2.0,7,Premium SUV,37.70-40.70,volkswagen
+237,Volvo,XC90,Hybrid,AT,2025,2.0,7,Premium SUV,104.00-125.00,volvo
+238,Volvo,EX30,Electric,AT,2025,0.0,5,Electric SUV,50.00-55.00,volvo
+239,Volvo,S90,Hybrid,AT,2025,2.0,5,Sedan,55.00-65.00,volvo
+240,Volvo,XC40 Recharge,Electric,AT,2025,0.0,5,Electric SUV,56.90-62.95,volvo
+241,Volvo,XC60,Hybrid,AT,2025,2.0,5,Mid-size SUV,68.90-79.90,volvo
+242,Volvo,V90,Petrol,AT,2025,2.0,5,Wagon,75.00-85.00,volvo
