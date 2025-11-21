@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Package, DollarSign, Star, Loader2, Heart, Sparkles, TrendingUp, Award, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Package, Star, Loader2, Heart, Sparkles, Award, CheckCircle2, Globe } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import Navbar from '../components/navbar';
 import AccessoryDetailModal from '../components/AccessoryDetailModal';
-import { getRecommendations, formatPrice, formatScore, getQualityBadgeColor, getSentimentBadgeColor, type UserProfile, type AccessoryRecommendation, type RecommendationResponse } from '../lib/api';
+import { getSectionedRecommendations, formatPrice, formatScore, getQualityBadgeColor, getSentimentBadgeColor, type UserProfile, type AccessoryRecommendation } from '../lib/api';
 import { useToast } from '../hooks/use-toast';
+import { useWishlist } from '../context/WishlistContext';
+import { toast as sonnerToast } from 'sonner';
 
 interface ResultsProps {
   user: any;
@@ -16,13 +18,25 @@ interface ResultsProps {
 export default function Results({ user }: ResultsProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   
   const [loading, setLoading] = useState(true);
-  const [recommendations, setRecommendations] = useState<AccessoryRecommendation[]>([]);
-  const [scoreBreakdown, setScoreBreakdown] = useState<any>(null);
+  const [exactMatchRecommendations, setExactMatchRecommendations] = useState<AccessoryRecommendation[]>([]);
+  const [compatibleRecommendations, setCompatibleRecommendations] = useState<AccessoryRecommendation[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [selectedAccessory, setSelectedAccessory] = useState<AccessoryRecommendation | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleToggleWishlist = (item: AccessoryRecommendation, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isInWishlist(item.accessory_id)) {
+      removeFromWishlist(item.accessory_id);
+      sonnerToast.success('Removed from wishlist');
+    } else {
+      addToWishlist(item);
+      sonnerToast.success('Added to wishlist!');
+    }
+  };
 
   const handleViewDetails = (accessory: AccessoryRecommendation) => {
     setSelectedAccessory(accessory);
@@ -31,13 +45,12 @@ export default function Results({ user }: ResultsProps) {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setTimeout(() => setSelectedAccessory(null), 300); // Wait for animation
+    setTimeout(() => setSelectedAccessory(null), 300);
   };
 
   useEffect(() => {
     const fetchRecommendations = async () => {
       try {
-        // Get user profile from session storage
         const profileData = sessionStorage.getItem('userProfile');
         if (!profileData) {
           toast({
@@ -50,18 +63,15 @@ export default function Results({ user }: ResultsProps) {
         }
 
         const profile: UserProfile = JSON.parse(profileData);
-        console.log('Loaded profile from session storage:', profile);
         setUserProfile(profile);
 
-        // Get recommendations from API
-        const response: RecommendationResponse = await getRecommendations(profile, 6);
-        console.log('Got response:', response);
+        const response = await getSectionedRecommendations(profile, 6, 6);
         
-        if (response.success && response.recommendations) {
-          setRecommendations(response.recommendations);
-          setScoreBreakdown(response.score_breakdown);
+        if (response.success) {
+          setExactMatchRecommendations(response.sections.exact_match.recommendations);
+          setCompatibleRecommendations(response.sections.compatible.recommendations);
         } else {
-          throw new Error(response.error || 'Failed to get recommendations');
+          throw new Error('Failed to get recommendations');
         }
       } catch (error: any) {
         console.error('Error fetching recommendations:', error);
@@ -82,6 +92,117 @@ export default function Results({ user }: ResultsProps) {
     navigate('/finder');
   };
 
+  const totalRecommendations = exactMatchRecommendations.length + compatibleRecommendations.length;
+
+  // Recommendation Card Component
+  const RecommendationCard = ({ 
+    item, 
+    index, 
+    sectionType 
+  }: { 
+    item: AccessoryRecommendation; 
+    index: number; 
+    sectionType: 'exact' | 'compatible';
+  }) => (
+    <Card className="group hover:shadow-xl transition-all duration-300 hover:border-primary/50">
+      <CardHeader>
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs">
+              #{index + 1}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => handleToggleWishlist(item, e)}
+            >
+              <Heart 
+                className={`h-4 w-4 ${isInWishlist(item.accessory_id) ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
+              />
+            </Button>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            {sectionType === 'exact' && (
+              <Badge className="bg-green-600 text-white text-xs">
+                <CheckCircle2 className="w-3 h-3 mr-1" />
+                EXACT MATCH
+              </Badge>
+            )}
+            {sectionType === 'compatible' && (
+              <Badge className="bg-blue-600 text-white text-xs">
+                <Globe className="w-3 h-3 mr-1" />
+                COMPATIBLE
+              </Badge>
+            )}
+            <Badge className={`${getQualityBadgeColor(item.quality_score)} text-white text-xs`}>
+              <Star className="w-3 h-3 mr-1" />
+              {formatScore(item.quality_score)}
+            </Badge>
+            <Badge className={`${getSentimentBadgeColor(item.sentiment_score)} text-white text-xs`}>
+              <Heart className="w-3 h-3 mr-1" />
+              {formatScore(item.sentiment_score)}
+            </Badge>
+          </div>
+        </div>
+        
+        <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
+          {item.accessory_name}
+        </CardTitle>
+        
+        <div className="flex items-center gap-1 mt-2">
+          <Award className="w-4 h-4 text-primary" />
+          <span className="text-sm font-semibold text-primary">
+            {formatScore(item.final_score)}
+          </span>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {item.compatibility_note && (
+          <div className={`${sectionType === 'exact' ? 'bg-green-50 border-2 border-green-300' : 'bg-blue-50 border-2 border-blue-300'} rounded-lg p-3`}>
+            <p className={`text-xs leading-relaxed ${sectionType === 'exact' ? 'text-green-700 font-medium' : 'text-blue-700'}`}>
+              {item.compatibility_note}
+            </p>
+          </div>
+        )}
+        
+        <div className="space-y-2">
+          <span className="text-3xl font-bold text-primary">
+            {formatPrice(item.price)}
+          </span>
+          
+          <div className="text-sm text-muted-foreground">
+            <p><strong>Brand:</strong> {item.car_brand}</p>
+            <p><strong>Model:</strong> {item.car_model}</p>
+          </div>
+        </div>
+
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {item.description}
+        </p>
+
+        <div className="flex gap-2">
+          <Button 
+            className="flex-1" 
+            variant="outline"
+            onClick={() => handleViewDetails(item)}
+          >
+            <Package className="w-4 h-4 mr-2" />
+            View Details
+          </Button>
+          <Button 
+            className="flex-1" 
+            variant="default"
+            onClick={() => navigate('/buy', { state: { accessory: item } })}
+          >
+            Buy Now
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/5">
@@ -93,7 +214,7 @@ export default function Results({ user }: ResultsProps) {
               <div className="text-center space-y-2">
                 <h2 className="text-2xl font-bold">Finding Your Perfect Accessories...</h2>
                 <p className="text-muted-foreground">
-                  Our AI is analyzing 1,739 accessories with 43 features each
+                  Our AI is analyzing 1,269 accessories with 47 features each
                 </p>
               </div>
             </div>
@@ -138,11 +259,11 @@ export default function Results({ user }: ResultsProps) {
 
           {/* Stats Summary */}
           {userProfile && (
-            <div className="grid md:grid-cols-4 gap-4 mb-8">
+            <div className="grid md:grid-cols-3 gap-4 mb-8">
               <Card>
                 <CardContent className="pt-6">
-                  <div className="text-2xl font-bold text-primary">{recommendations.length}</div>
-                  <p className="text-sm text-muted-foreground">Recommendations</p>
+                  <div className="text-2xl font-bold text-primary">{totalRecommendations}</div>
+                  <p className="text-sm text-muted-foreground">Total Recommendations</p>
                 </CardContent>
               </Card>
               <Card>
@@ -156,24 +277,72 @@ export default function Results({ user }: ResultsProps) {
               <Card>
                 <CardContent className="pt-6">
                   <div className="text-2xl font-bold text-primary">
-                    {recommendations.length > 0 ? formatScore(recommendations[0].final_score) : '-'}
+                    {exactMatchRecommendations.length > 0 ? formatScore(exactMatchRecommendations[0].final_score) : '-'}
                   </div>
                   <p className="text-sm text-muted-foreground">Top Match Score</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-2xl font-bold text-primary">
-                    {userProfile.preferred_categories?.length || 'All'}
-                  </div>
-                  <p className="text-sm text-muted-foreground">Categories Selected</p>
                 </CardContent>
               </Card>
             </div>
           )}
 
-          {/* Recommendations Grid */}
-          {recommendations.length === 0 ? (
+          {/* SECTION 1: Exact Match Accessories */}
+          {exactMatchRecommendations.length > 0 && (
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-6 bg-green-50 p-4 rounded-lg border-2 border-green-200">
+                <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0" />
+                <div>
+                  <h2 className="text-2xl font-bold text-green-700">
+                    Accessories for Your {userProfile?.car_brand} {userProfile?.car_model}
+                  </h2>
+                  <p className="text-sm text-green-600 mt-1">
+                    ✅ These accessories are specifically designed for your car
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {exactMatchRecommendations.map((item, index) => (
+                  <RecommendationCard 
+                    key={item.accessory_id} 
+                    item={item} 
+                    index={index} 
+                    sectionType="exact" 
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* SECTION 2: Compatible/Universal Accessories */}
+          {compatibleRecommendations.length > 0 && (
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-6 bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
+                <Globe className="w-6 h-6 text-blue-600 flex-shrink-0" />
+                <div>
+                  <h2 className="text-2xl font-bold text-blue-700">
+                    Other Compatible/Universal Accessories
+                  </h2>
+                  <p className="text-sm text-blue-600 mt-1">
+                    🌐 These accessories are cross-compatible or universal fit
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {compatibleRecommendations.map((item, index) => (
+                  <RecommendationCard 
+                    key={item.accessory_id} 
+                    item={item} 
+                    index={index} 
+                    sectionType="compatible" 
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* No Results */}
+          {totalRecommendations === 0 && (
             <Card className="text-center p-12">
               <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">No Recommendations Found</h3>
@@ -184,139 +353,10 @@ export default function Results({ user }: ResultsProps) {
                 Adjust Preferences
               </Button>
             </Card>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recommendations.map((item, index) => (
-                <Card key={item.accessory_id} className="group hover:shadow-xl transition-all duration-300 hover:border-primary/50">
-                  <CardHeader>
-                    <div className="flex items-start justify-between mb-3">
-                      <Badge variant="outline" className="text-xs">
-                        #{index + 1}
-                      </Badge>
-                      <div className="flex flex-col items-end gap-1">
-                        <Badge className={`${getQualityBadgeColor(item.quality_score)} text-white text-xs`}>
-                          <Star className="w-3 h-3 mr-1" />
-                          {formatScore(item.quality_score)}
-                        </Badge>
-                        <Badge className={`${getSentimentBadgeColor(item.sentiment_score)} text-white text-xs`}>
-                          <Heart className="w-3 h-3 mr-1" />
-                          {formatScore(item.sentiment_score)}
-                        </Badge>
-                      </div>
-                    </div>
-                    
-                    <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
-                      {item.accessory_name}
-                    </CardTitle>
-                    
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {item.category}
-                      </Badge>
-                      <div className="flex items-center gap-1">
-                        <Award className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-semibold text-primary">
-                          {formatScore(item.final_score)}
-                        </span>
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-4">
-                    {/* Cross-Compatibility Badge - SHOW FIRST AND PROMINENTLY */}
-                    {item.is_cross_compatible && item.compatibility_note && (
-                      <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-3 flex items-start gap-3 shadow-sm">
-                        <div className="flex-shrink-0 mt-1">
-                          <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-xs font-semibold text-amber-800 mb-1">CROSS-MODEL COMPATIBILITY</p>
-                          <p className="text-xs text-amber-700 leading-relaxed line-clamp-2">
-                            {item.compatibility_note}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-3xl font-bold text-primary">
-                          {formatPrice(item.price)}
-                        </span>
-                      </div>
-                      
-                      <div className="text-sm text-muted-foreground">
-                        <p><strong>Brand:</strong> {item.car_brand}</p>
-                        <p><strong>Model:</strong> {item.car_model}</p>
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {item.description}
-                    </p>
-
-                    <Button 
-                      className="w-full" 
-                      variant="default"
-                      onClick={() => handleViewDetails(item)}
-                    >
-                      <Package className="w-4 h-4 mr-2" />
-                      View Full Details
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {/* Score Breakdown - Shown AFTER all accessories */}
-          {scoreBreakdown && (
-            <Card className="mt-12 border-primary/20 bg-primary/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  Personalization Score Breakdown
-                </CardTitle>
-                <CardDescription>
-                  How we calculated your personalized recommendations
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-5 gap-4">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-primary">{formatScore(scoreBreakdown.car_compatibility)}</div>
-                    <p className="text-xs text-muted-foreground mt-1">Car Match</p>
-                    <p className="text-xs text-muted-foreground">(25% weight)</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-primary">{formatScore(scoreBreakdown.content_similarity)}</div>
-                    <p className="text-xs text-muted-foreground mt-1">Content Similarity</p>
-                    <p className="text-xs text-muted-foreground">(20% weight)</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-primary">{formatScore(scoreBreakdown.quality_score)}</div>
-                    <p className="text-xs text-muted-foreground mt-1">Quality & Sentiment</p>
-                    <p className="text-xs text-muted-foreground">(25% weight)</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-primary">{formatScore(scoreBreakdown.preference_match)}</div>
-                    <p className="text-xs text-muted-foreground mt-1">Preference Match</p>
-                    <p className="text-xs text-muted-foreground">(20% weight)</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-primary">{formatScore(scoreBreakdown.emotion_alignment)}</div>
-                    <p className="text-xs text-muted-foreground mt-1">Emotion Alignment</p>
-                    <p className="text-xs text-muted-foreground">(10% weight)</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           )}
 
           {/* Call to Action */}
-          {recommendations.length > 0 && (
+          {totalRecommendations > 0 && (
             <div className="mt-12 text-center space-y-4">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 rounded-full text-green-600 text-sm font-medium">
                 <Sparkles className="w-4 h-4" />

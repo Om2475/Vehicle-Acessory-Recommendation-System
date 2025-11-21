@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Car, DollarSign, Package, ArrowRight, Sparkles, Heart, Zap, Shield, Star } from 'lucide-react';
+import { Car, DollarSign, Package, ArrowRight, Sparkles, Heart, Zap, Shield } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Checkbox } from '../components/ui/checkbox';
-import { Slider } from '../components/ui/slider';
 import Navbar from '../components/navbar';
-import { getBrands, getCategories, validateUserProfile, getDefaultAspectPriorities, type UserProfile, type AspectPriorities } from '../lib/api';
+import { getBrands, getModelsByBrand, validateUserProfile, type UserProfile } from '../lib/api';
 import { useToast } from '../hooks/use-toast';
 
 interface RecommendationFinderProps {
@@ -24,34 +22,26 @@ export default function RecommendationFinder({ user }: RecommendationFinderProps
   const [carModel, setCarModel] = useState('');
   const [budgetMin, setBudgetMin] = useState('500');
   const [budgetMax, setBudgetMax] = useState('10000');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [qualityThreshold, setQualityThreshold] = useState(0.3);
-  const [sentimentPreference, setSentimentPreference] = useState<'positive' | 'neutral' | 'negative' | 'any'>('positive');
-  const [emotionPreference, setEmotionPreference] = useState<'Happy' | 'Satisfied' | 'Neutral' | 'Frustrated' | 'Disappointed' | 'any'>('any');
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [aspectPriorities, setAspectPriorities] = useState<AspectPriorities>(getDefaultAspectPriorities());
   const [searchQuery, setSearchQuery] = useState('');
 
   // Data from API
   const [brands, setBrands] = useState<string[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Fetch brands and categories on mount
+  // Fetch brands on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [brandsData, categoriesData] = await Promise.all([
-          getBrands(),
-          getCategories()
-        ]);
+        const brandsData = await getBrands();
         setBrands(brandsData);
-        setCategories(categoriesData);
       } catch (error) {
         console.error('Error fetching data:', error);
         toast({
           title: "Error",
-          description: "Failed to load brands and categories. Please refresh the page.",
+          description: "Failed to load brands. Please refresh the page.",
           variant: "destructive",
         });
       }
@@ -59,46 +49,54 @@ export default function RecommendationFinder({ user }: RecommendationFinderProps
     fetchData();
   }, [toast]);
 
-  const handleCategoryToggle = (category: string) => {
-    setSelectedCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    );
-  };
+  // Fetch models when brand changes
+  useEffect(() => {
+    const fetchModels = async () => {
+      if (!carBrand) {
+        setAvailableModels([]);
+        setCarModel('');
+        return;
+      }
 
-  const handleAspectPriorityChange = (aspect: keyof AspectPriorities, value: number) => {
-    setAspectPriorities(prev => ({
-      ...prev,
-      [aspect]: value / 100, // Convert slider value (0-100) to 0-1
-    }));
-  };
+      setLoadingModels(true);
+      try {
+        const models = await getModelsByBrand(carBrand);
+        setAvailableModels(models);
+        // Reset car model when brand changes
+        setCarModel('');
+      } catch (error) {
+        console.error('Error fetching models:', error);
+        toast({
+          title: "Error",
+          description: `Failed to load models for ${carBrand}. Please try again.`,
+          variant: "destructive",
+        });
+        setAvailableModels([]);
+      } finally {
+        setLoadingModels(false);
+      }
+    };
+    fetchModels();
+  }, [carBrand, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Build user profile - remove undefined values
+      // Build user profile - use default values for quality and sentiment
       const userProfile: any = {
         car_brand: carBrand,
         car_model: carModel.trim(), // Now required
         budget_min: parseInt(budgetMin),
         budget_max: parseInt(budgetMax),
-        preferred_categories: selectedCategories.length > 0 ? selectedCategories : [],
-        quality_threshold: qualityThreshold,
-        sentiment_preference: sentimentPreference,
-        // Convert emotion_preference to array for backend
-        emotion_preference: emotionPreference === 'any' 
-          ? ['Happy', 'Satisfied', 'Neutral', 'Frustrated', 'Disappointed'] 
-          : [emotionPreference],
+        quality_threshold: 0, // Default: no minimum threshold
+        sentiment_preference: 'any', // Default: accept all sentiments
+        // Accept all emotions by default
+        emotion_preference: ['Happy', 'Satisfied', 'Neutral', 'Frustrated', 'Disappointed'],
       };
 
       // Only add optional fields if they have values
-      if (showAdvanced && aspectPriorities) {
-        userProfile.aspect_priorities = aspectPriorities;
-      }
-      
       if (searchQuery && searchQuery.trim()) {
         userProfile.search_query = searchQuery.trim();
       }
@@ -179,17 +177,33 @@ export default function RecommendationFinder({ user }: RecommendationFinderProps
 
                   <div className="space-y-2">
                     <Label htmlFor="carModel">Car Model *</Label>
-                    <Input
-                      id="carModel"
-                      type="text"
-                      placeholder="e.g., Camry, Civic, Q3, Nexon, etc."
-                      value={carModel}
-                      onChange={(e) => setCarModel(e.target.value)}
-                      className="h-12"
+                    <Select 
+                      value={carModel} 
+                      onValueChange={setCarModel} 
                       required
-                    />
+                      disabled={!carBrand || loadingModels}
+                    >
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder={
+                          !carBrand 
+                            ? "First select a brand" 
+                            : loadingModels 
+                            ? "Loading models..." 
+                            : "Select your car model"
+                        } />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {availableModels.map((model) => (
+                          <SelectItem key={model} value={model}>
+                            {model}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <p className="text-xs text-muted-foreground">
-                      Specify your car model for accurate recommendations
+                      {carBrand 
+                        ? `${availableModels.length} model(s) available for ${carBrand}` 
+                        : 'Select a brand first to see available models'}
                     </p>
                   </div>
                 </div>
@@ -240,97 +254,6 @@ export default function RecommendationFinder({ user }: RecommendationFinderProps
                 </p>
               </div>
 
-              {/* Categories */}
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
-                  <Package className="w-5 h-5 text-primary" />
-                  Preferred Categories
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Select categories you're interested in (leave empty for all)
-                </p>
-                
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {categories.map((category) => (
-                    <div key={category} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={category}
-                        checked={selectedCategories.includes(category)}
-                        onCheckedChange={() => handleCategoryToggle(category)}
-                      />
-                      <Label
-                        htmlFor={category}
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        {category}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Quality & Sentiment */}
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
-                  <Star className="w-5 h-5 text-primary" />
-                  Quality & Sentiment Preferences
-                </h2>
-                
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <Label htmlFor="qualityThreshold">
-                      Minimum Quality Threshold: {(qualityThreshold * 100).toFixed(0)}%
-                    </Label>
-                    <Slider
-                      id="qualityThreshold"
-                      min={0}
-                      max={100}
-                      step={5}
-                      value={[qualityThreshold * 100]}
-                      onValueChange={([value]) => setQualityThreshold(value / 100)}
-                      className="py-4"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Only show accessories with quality score above this threshold
-                    </p>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="sentimentPreference">Sentiment Preference</Label>
-                      <Select value={sentimentPreference} onValueChange={(value: any) => setSentimentPreference(value)}>
-                        <SelectTrigger className="h-12">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="positive">Positive reviews only</SelectItem>
-                          <SelectItem value="neutral">Neutral reviews</SelectItem>
-                          <SelectItem value="negative">Show all (including negative)</SelectItem>
-                          <SelectItem value="any">Any sentiment</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="emotionPreference">Emotion Preference</Label>
-                      <Select value={emotionPreference} onValueChange={(value: any) => setEmotionPreference(value)}>
-                        <SelectTrigger className="h-12">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="any">Any emotion</SelectItem>
-                          <SelectItem value="Happy">😊 Happy</SelectItem>
-                          <SelectItem value="Satisfied">✅ Satisfied</SelectItem>
-                          <SelectItem value="Neutral">😐 Neutral</SelectItem>
-                          <SelectItem value="Frustrated">😤 Frustrated</SelectItem>
-                          <SelectItem value="Disappointed">😞 Disappointed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Advanced Options */}
               <div className="space-y-6">
                 <Button
@@ -345,27 +268,7 @@ export default function RecommendationFinder({ user }: RecommendationFinderProps
 
                 {showAdvanced && (
                   <div className="space-y-6 p-6 bg-secondary/20 rounded-lg border border-border">
-                    <h3 className="font-semibold">Aspect Priorities</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Adjust importance of different aspects (0% = not important, 100% = very important)
-                    </p>
-                    
-                    {Object.keys(aspectPriorities).map((aspect) => (
-                      <div key={aspect} className="space-y-2">
-                        <Label>
-                          {aspect}: {((aspectPriorities[aspect as keyof AspectPriorities] || 0) * 100).toFixed(0)}%
-                        </Label>
-                        <Slider
-                          min={0}
-                          max={100}
-                          step={10}
-                          value={[(aspectPriorities[aspect as keyof AspectPriorities] || 0) * 100]}
-                          onValueChange={([value]) => handleAspectPriorityChange(aspect as keyof AspectPriorities, value)}
-                        />
-                      </div>
-                    ))}
-
-                    <div className="space-y-2 pt-4">
+                    <div className="space-y-2">
                       <Label htmlFor="searchQuery">Search Keywords (Optional)</Label>
                       <Input
                         id="searchQuery"
@@ -375,6 +278,9 @@ export default function RecommendationFinder({ user }: RecommendationFinderProps
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="h-12"
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Enter keywords to find accessories with specific features or materials
+                      </p>
                     </div>
                   </div>
                 )}

@@ -32,26 +32,11 @@ rec_engine = None
 
 
 # Pydantic models for API
-class AspectPriorities(BaseModel):
-    Quality: float = Field(default=0.8, ge=0, le=1)
-    Durability: float = Field(default=0.7, ge=0, le=1)
-    Installation: float = Field(default=0.5, ge=0, le=1)
-    Design: float = Field(default=0.5, ge=0, le=1)
-    Compatibility: float = Field(default=0.8, ge=0, le=1)
-    Value: float = Field(default=0.7, ge=0, le=1)
-    Comfort: float = Field(default=0.5, ge=0, le=1)
-    Performance: float = Field(default=0.6, ge=0, le=1)
-
-
 class UserProfile(BaseModel):
     car_brand: str = Field(..., description="User's car brand (e.g., 'Toyota', 'Honda')")
     car_model: Optional[str] = Field(None, description="User's car model (e.g., 'Camry', 'Civic')")
     budget_min: float = Field(..., ge=0, description="Minimum budget in rupees")
     budget_max: float = Field(..., gt=0, description="Maximum budget in rupees")
-    preferred_categories: List[str] = Field(
-        default=[],
-        description="Preferred accessory categories (e.g., ['Interior', 'Safety'])"
-    )
     quality_threshold: float = Field(
         default=0.3,
         ge=-1,
@@ -66,10 +51,6 @@ class UserProfile(BaseModel):
         default=["Happy", "Satisfied"],
         description="Preferred emotions (e.g., ['Happy', 'Satisfied'])"
     )
-    aspect_priorities: Optional[AspectPriorities] = Field(
-        default=None,
-        description="Priority weights for different aspects"
-    )
     search_query: Optional[str] = Field(
         default=None,
         description="Optional search query for content-based filtering"
@@ -82,7 +63,6 @@ class AccessoryRecommendation(BaseModel):
     car_brand: str
     car_model: str
     price: float
-    category: str
     description: str
     sentiment_score: float
     sentiment_label: str
@@ -141,7 +121,6 @@ async def root():
             "health": "/health",
             "stats": "/stats",
             "recommend": "/recommend (POST)",
-            "categories": "/categories",
             "brands": "/brands"
         }
     }
@@ -171,7 +150,6 @@ async def get_stats():
     return {
         "total_accessories": len(df),
         "total_brands": df['Car Brand'].nunique(),
-        "total_categories": df['Category'].nunique(),
         "price_range": {
             "min": float(df['Accessory Price'].min()),
             "max": float(df['Accessory Price'].max()),
@@ -183,19 +161,6 @@ async def get_stats():
             "min": float(df['Overall_Quality_Score'].min()),
             "max": float(df['Overall_Quality_Score'].max())
         }
-    }
-
-
-@app.get("/categories")
-async def get_categories():
-    """Get list of all available categories"""
-    if rec_engine is None:
-        raise HTTPException(status_code=503, detail="Recommendation engine not initialized")
-    
-    categories = sorted(rec_engine.df['Category'].unique().tolist())
-    return {
-        "categories": categories,
-        "count": len(categories)
     }
 
 
@@ -212,10 +177,198 @@ async def get_brands():
     }
 
 
+@app.get("/brands/{brand}/models")
+async def get_models_by_brand(brand: str):
+    """Get list of car models available for a specific brand"""
+    if rec_engine is None:
+        raise HTTPException(status_code=503, detail="Recommendation engine not initialized")
+    
+    # Filter accessories by brand (case-insensitive)
+    brand_accessories = rec_engine.df[
+        rec_engine.df['Car Brand'].str.lower() == brand.lower()
+    ]
+    
+    if len(brand_accessories) == 0:
+        raise HTTPException(status_code=404, detail=f"No accessories found for brand: {brand}")
+    
+    # Get unique models for this brand
+    models = sorted(brand_accessories['Car Model'].unique().tolist())
+    
+    return {
+        "brand": brand,
+        "models": models,
+        "count": len(models),
+        "accessory_count": len(brand_accessories)
+    }
+
+
+@app.get("/brands-with-models")
+async def get_brands_with_models():
+    """Get all brands with their available models"""
+    if rec_engine is None:
+        raise HTTPException(status_code=503, detail="Recommendation engine not initialized")
+    
+    df = rec_engine.df
+    
+    # Group by brand and get models
+    brands_data = {}
+    for brand in sorted(df['Car Brand'].unique()):
+        brand_df = df[df['Car Brand'] == brand]
+        models = sorted(brand_df['Car Model'].unique().tolist())
+        brands_data[brand] = {
+            "models": models,
+            "model_count": len(models),
+            "accessory_count": len(brand_df)
+        }
+    
+    return {
+        "brands": brands_data,
+        "total_brands": len(brands_data)
+    }
+
+
+@app.post("/recommend/sectioned")
+async def get_sectioned_recommendations(
+    user_profile: UserProfile,
+    exact_match_count: int = 6,
+    compatible_count: int = 6
+):
+    """
+    Get sectioned accessory recommendations
+    
+    **NEW ENDPOINT:** Returns recommendations in two sections:
+    1. **Exact Match**: Accessories specifically designed for your car (brand + model match)
+    2. **Compatible/Universal**: Accessories that are cross-compatible or universal
+    
+    This provides better organization and transparency about which accessories are 
+    specifically for your car vs. compatible alternatives.
+    
+    Parameters:
+    - user_profile: User preferences and requirements
+    - exact_match_count: Number of exact match recommendations (default: 6)
+    - compatible_count: Number of compatible/universal recommendations (default: 6)
+    
+    Returns:
+    - Sectioned recommendations with clear labeling
+    """
+    if rec_engine is None:
+        raise HTTPException(status_code=503, detail="Recommendation engine not initialized")
+    
+    # Validate counts
+    if exact_match_count < 1 or exact_match_count > 20:
+        raise HTTPException(status_code=400, detail="exact_match_count must be between 1 and 20")
+    if compatible_count < 1 or compatible_count > 20:
+        raise HTTPException(status_code=400, detail="compatible_count must be between 1 and 20")
+    
+    # Validate budget
+    if user_profile.budget_min >= user_profile.budget_max:
+        raise HTTPException(status_code=400, detail="budget_min must be less than budget_max")
+    
+    # Convert Pydantic model to dict
+    user_dict = user_profile.dict()
+    
+    try:
+        # Get sectioned recommendations
+        sections = rec_engine.get_recommendations_by_sections(
+            user_dict,
+            exact_match_count=exact_match_count,
+            compatible_count=compatible_count,
+            diversity_factor=0.3
+        )
+        
+        # Format exact match recommendations
+        exact_match_list = []
+        for idx, row in sections['exact_match']['recommendations'].iterrows():
+            exact_match_list.append(AccessoryRecommendation(
+                accessory_id=str(row['Accessory_ID']),
+                accessory_name=str(row['Accessory Name']),
+                car_brand=str(row['Car Brand']),
+                car_model=str(row['Car Model']),
+                price=float(row['Accessory Price']),
+                description=str(row['Accessory Description']),
+                sentiment_score=float(row['Sentiment_Score']),
+                sentiment_label=str(row['Sentiment_Label']),
+                quality_score=float(row['Overall_Quality_Score']),
+                dominant_emotion=str(row['Dominant_Emotion']),
+                final_score=float(row['final_score']),
+                explanation=str(row['explanation']),
+                compatible_cars=str(row['Compatible Cars']),
+                is_cross_compatible=False,
+                compatibility_note=f"✅ Designed specifically for your {user_dict.get('car_brand')} {user_dict.get('car_model')}",
+                top_reviews=str(row.get('Top 5 Reviews', '')),
+                key_strengths=str(row.get('Key_Strengths', 'N/A')),
+                key_weaknesses=str(row.get('Key_Weaknesses', 'N/A'))
+            ))
+        
+        # Format compatible recommendations
+        compatible_list = []
+        user_car_model = user_dict.get('car_model', '').lower()
+        user_car_brand = user_dict.get('car_brand', '')
+        
+        for idx, row in sections['compatible']['recommendations'].iterrows():
+            accessory_model = str(row['Car Model']).lower()
+            accessory_brand = str(row['Car Brand'])
+            compatible_cars = str(row['Compatible Cars']).lower()
+            
+            # Determine compatibility type
+            if 'universal' in compatible_cars or 'all cars' in compatible_cars:
+                compatibility_note = f"🌐 Universal accessory - Fits multiple car models including your {user_car_brand} {user_dict.get('car_model', '')}"
+            else:
+                compatibility_note = f"🔄 Originally for {accessory_brand} {row['Car Model']}, but also compatible with your {user_car_brand} {user_dict.get('car_model', '')}"
+            
+            compatible_list.append(AccessoryRecommendation(
+                accessory_id=str(row['Accessory_ID']),
+                accessory_name=str(row['Accessory Name']),
+                car_brand=str(row['Car Brand']),
+                car_model=str(row['Car Model']),
+                price=float(row['Accessory Price']),
+                description=str(row['Accessory Description']),
+                sentiment_score=float(row['Sentiment_Score']),
+                sentiment_label=str(row['Sentiment_Label']),
+                quality_score=float(row['Overall_Quality_Score']),
+                dominant_emotion=str(row['Dominant_Emotion']),
+                final_score=float(row['final_score']),
+                explanation=str(row['explanation']),
+                compatible_cars=str(row['Compatible Cars']),
+                is_cross_compatible=True,
+                compatibility_note=compatibility_note,
+                top_reviews=str(row.get('Top 5 Reviews', '')),
+                key_strengths=str(row.get('Key_Strengths', 'N/A')),
+                key_weaknesses=str(row.get('Key_Weaknesses', 'N/A'))
+            ))
+        
+        return {
+            "success": True,
+            "sections": {
+                "exact_match": {
+                    "title": f"Accessories for Your {user_dict.get('car_brand')} {user_dict.get('car_model')}",
+                    "description": sections['exact_match']['description'],
+                    "count": sections['exact_match']['count'],
+                    "recommendations": exact_match_list,
+                    "score_breakdown": sections['exact_match']['scores']
+                },
+                "compatible": {
+                    "title": "Compatible & Universal Accessories",
+                    "description": sections['compatible']['description'],
+                    "count": sections['compatible']['count'],
+                    "recommendations": compatible_list,
+                    "score_breakdown": sections['compatible']['scores']
+                }
+            },
+            "total_recommendations": sections['exact_match']['count'] + sections['compatible']['count']
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating sectioned recommendations: {str(e)}")
+
+
 @app.post("/recommend", response_model=RecommendationResponse)
 async def get_recommendations(user_profile: UserProfile, top_k: int = 6):
     """
-    Get personalized accessory recommendations
+    Get personalized accessory recommendations (LEGACY ENDPOINT)
+    
+    **NOTE:** Consider using /recommend/sectioned for better organization.
+    This endpoint returns a mixed list of recommendations.
     
     Parameters:
     - user_profile: User preferences and requirements
@@ -237,10 +390,6 @@ async def get_recommendations(user_profile: UserProfile, top_k: int = 6):
     
     # Convert Pydantic model to dict
     user_dict = user_profile.dict()
-    
-    # Convert aspect_priorities to dict if provided
-    if user_dict['aspect_priorities'] is not None:
-        user_dict['aspect_priorities'] = user_dict['aspect_priorities'].dict()
     
     try:
         # Get recommendations
@@ -287,7 +436,6 @@ async def get_recommendations(user_profile: UserProfile, top_k: int = 6):
                 car_brand=str(row['Car Brand']),
                 car_model=str(row['Car Model']),
                 price=float(row['Accessory Price']),
-                category=str(row['Category']),
                 description=str(row['Accessory Description']),  # Full description
                 sentiment_score=float(row['Sentiment_Score']),
                 sentiment_label=str(row['Sentiment_Label']),
@@ -326,15 +474,9 @@ async def demo_recommendations():
         'car_model': 'Camry',
         'budget_min': 500,
         'budget_max': 3000,
-        'preferred_categories': ['Interior', 'Safety'],
         'quality_threshold': 0.3,
         'sentiment_preference': 'positive',
-        'emotion_preference': ['Happy', 'Satisfied'],
-        'aspect_priorities': {
-            'Quality': 0.9,
-            'Value': 0.8,
-            'Compatibility': 0.9
-        }
+        'emotion_preference': ['Happy', 'Satisfied']
     }
     
     recommendations_df, scores = rec_engine.get_recommendations(demo_user, top_k=6)
@@ -344,7 +486,6 @@ async def demo_recommendations():
         recs_list.append({
             "accessory_name": row['Accessory Name'],
             "price": f"₹{row['Accessory Price']:,.0f}",
-            "category": row['Category'],
             "score": f"{row['final_score']:.3f}",
             "explanation": row['explanation']
         })

@@ -7,27 +7,14 @@ const API_BASE_URL = 'http://localhost:8000';
 
 // ==================== TYPE DEFINITIONS ====================
 
-export interface AspectPriorities {
-  Quality?: number;
-  Durability?: number;
-  Installation?: number;
-  Design?: number;
-  Compatibility?: number;
-  Value?: number;
-  Comfort?: number;
-  Performance?: number;
-}
-
 export interface UserProfile {
   car_brand: string;
   car_model?: string;
   budget_min: number;
   budget_max: number;
-  preferred_categories?: string[];
   quality_threshold?: number;
   sentiment_preference?: 'positive' | 'neutral' | 'negative' | 'any';
   emotion_preference?: string[] | string; // Backend expects array
-  aspect_priorities?: AspectPriorities;
   search_query?: string;
 }
 
@@ -37,7 +24,6 @@ export interface AccessoryRecommendation {
   car_brand: string;
   car_model: string;
   price: number;
-  category: string;
   description: string;
   sentiment_score: number;
   sentiment_label: string;
@@ -57,14 +43,28 @@ export interface RecommendationResponse {
   success: boolean;
   count: number;
   recommendations: AccessoryRecommendation[];
-  score_breakdown?: {
-    car_compatibility: number;
-    content_similarity: number;
-    quality_score: number;
-    preference_match: number;
-    emotion_alignment: number;
-  };
   error?: string;
+}
+
+export interface SectionedRecommendationResponse {
+  success: boolean;
+  sections: {
+    exact_match: {
+      title: string;
+      description: string;
+      count: number;
+      recommendations: AccessoryRecommendation[];
+      score_breakdown?: any;
+    };
+    compatible: {
+      title: string;
+      description: string;
+      count: number;
+      recommendations: AccessoryRecommendation[];
+      score_breakdown?: any;
+    };
+  };
+  total_recommendations: number;
 }
 
 export interface RecommendationRequest {
@@ -75,7 +75,6 @@ export interface RecommendationRequest {
 export interface ApiStats {
   total_accessories: number;
   total_brands: number;
-  total_categories: number;
   price_range: {
     min: number;
     max: number;
@@ -112,7 +111,62 @@ export interface CategoryInfo {
 // ==================== API FUNCTIONS ====================
 
 /**
- * Get recommendations based on user profile
+ * Get sectioned recommendations (NEW: Two sections - exact match and compatible)
+ */
+export async function getSectionedRecommendations(
+  userProfile: UserProfile,
+  exactMatchCount: number = 6,
+  compatibleCount: number = 6
+): Promise<SectionedRecommendationResponse> {
+  try {
+    // Ensure emotion_preference is an array
+    const emotionPref = Array.isArray(userProfile.emotion_preference) 
+      ? userProfile.emotion_preference 
+      : (typeof userProfile.emotion_preference === 'string' 
+          ? [userProfile.emotion_preference] 
+          : ['Happy', 'Satisfied']);
+
+    const transformedProfile = {
+      car_brand: userProfile.car_brand,
+      car_model: userProfile.car_model || null,
+      budget_min: userProfile.budget_min,
+      budget_max: userProfile.budget_max,
+      quality_threshold: userProfile.quality_threshold ?? 0.3,
+      sentiment_preference: userProfile.sentiment_preference || 'positive',
+      emotion_preference: emotionPref,
+      search_query: userProfile.search_query || null,
+    };
+
+    console.log('Sending sectioned request:', transformedProfile);
+
+    const response = await fetch(
+      `${API_BASE_URL}/recommend/sectioned?exact_match_count=${exactMatchCount}&compatible_count=${compatibleCount}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(transformedProfile),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('API Error Response:', errorData);
+      throw new Error(`HTTP error! status: ${response.status}, details: ${JSON.stringify(errorData)}`);
+    }
+
+    const data = await response.json();
+    console.log('Received sectioned response:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching sectioned recommendations:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get recommendations based on user profile (LEGACY - use getSectionedRecommendations instead)
  */
 export async function getRecommendations(
   userProfile: UserProfile,
@@ -131,11 +185,9 @@ export async function getRecommendations(
       car_model: userProfile.car_model || null,
       budget_min: userProfile.budget_min,
       budget_max: userProfile.budget_max,
-      preferred_categories: userProfile.preferred_categories || [],
       quality_threshold: userProfile.quality_threshold ?? 0.3,
       sentiment_preference: userProfile.sentiment_preference || 'positive',
       emotion_preference: emotionPref,
-      aspect_priorities: userProfile.aspect_priorities || null,
       search_query: userProfile.search_query || null,
     };
 
@@ -203,20 +255,39 @@ export async function getBrands(): Promise<string[]> {
 }
 
 /**
- * Get available categories
+ * Get models available for a specific brand
  */
-export async function getCategories(): Promise<string[]> {
+export async function getModelsByBrand(brand: string): Promise<string[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/categories`);
+    const response = await fetch(`${API_BASE_URL}/brands/${encodeURIComponent(brand)}/models`);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    return data.categories;
+    return data.models;
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    console.error('Error fetching models for brand:', brand, error);
+    throw error;
+  }
+}
+
+/**
+ * Get all brands with their available models
+ */
+export async function getBrandsWithModels(): Promise<Record<string, { models: string[]; model_count: number; accessory_count: number }>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/brands-with-models`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.brands;
+  } catch (error) {
+    console.error('Error fetching brands with models:', error);
     throw error;
   }
 }
@@ -346,22 +417,6 @@ export function formatScore(score: number): string {
 }
 
 /**
- * Get default aspect priorities (all equal weight)
- */
-export function getDefaultAspectPriorities(): AspectPriorities {
-  return {
-    Quality: 0.5,
-    Durability: 0.5,
-    Installation: 0.5,
-    Design: 0.5,
-    Compatibility: 0.5,
-    Value: 0.5,
-    Comfort: 0.5,
-    Performance: 0.5,
-  };
-}
-
-/**
  * Validate user profile
  */
 export function validateUserProfile(profile: UserProfile): { valid: boolean; errors: string[] } {
@@ -397,7 +452,6 @@ export default {
   getRecommendations,
   getStats,
   getBrands,
-  getCategories,
   getBrandDetails,
   getCategoryDetails,
   healthCheck,
@@ -408,5 +462,4 @@ export default {
   getQualityBadgeColor,
   getSentimentBadgeColor,
   formatScore,
-  getDefaultAspectPriorities,
 };

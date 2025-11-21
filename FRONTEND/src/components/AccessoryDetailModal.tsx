@@ -3,6 +3,7 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Star, Heart, Award, TrendingUp, MessageCircle, ThumbsUp, ThumbsDown, X, Package } from 'lucide-react';
 import { formatPrice, formatScore, getQualityBadgeColor, getSentimentBadgeColor, type AccessoryRecommendation } from '../lib/api';
+import { useNavigate } from 'react-router-dom';
 
 interface AccessoryDetailModalProps {
   accessory: AccessoryRecommendation | null;
@@ -11,7 +12,14 @@ interface AccessoryDetailModalProps {
 }
 
 export default function AccessoryDetailModal({ accessory, isOpen, onClose }: AccessoryDetailModalProps) {
+  const navigate = useNavigate();
+  
   if (!accessory) return null;
+
+  const handleBuyNow = () => {
+    onClose();
+    navigate('/buy', { state: { accessory } });
+  };
 
   // Parse reviews
   const parseReviews = (reviewsText: string) => {
@@ -42,7 +50,7 @@ export default function AccessoryDetailModal({ accessory, isOpen, onClose }: Acc
                 {accessory.accessory_name}
               </DialogTitle>
               <DialogDescription className="text-base">
-                {accessory.car_brand} {accessory.car_model} • {accessory.category}
+                {accessory.car_brand} {accessory.car_model}
               </DialogDescription>
             </div>
             <button
@@ -189,7 +197,7 @@ export default function AccessoryDetailModal({ accessory, isOpen, onClose }: Acc
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4 border-t">
-            <Button className="flex-1" size="lg">
+            <Button className="flex-1" size="lg" onClick={handleBuyNow}>
               <Package className="w-4 h-4 mr-2" />
               Buy Now
             </Button>
