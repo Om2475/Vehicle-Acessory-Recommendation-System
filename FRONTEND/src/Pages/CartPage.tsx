@@ -1,11 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Separator } from '../components/ui/separator';
 import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
+import Navbar from '../components/navbar';
 import {
   ShoppingCart,
   Trash2,
@@ -20,7 +22,8 @@ import {
 
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
-  const { cartItems, removeFromCart, updateQuantity, clearCart, getCartTotal, getCartCount } = useCart();
+  const { user } = useAuth();
+  const { cartItems = [], removeFromCart, updateQuantity, clearCart, getCartTotal, getCartCount } = useCart();
 
   const handleCheckout = () => {
     if (cartItems.length === 0) {
@@ -49,7 +52,8 @@ const CartPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-6">
+      <Navbar user={user} />
+      <div className="container mx-auto px-4 py-24">
         {/* Header */}
         <div className="mb-6">
           <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
@@ -83,8 +87,8 @@ const CartPage: React.FC = () => {
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               Add some accessories to get started!
             </p>
-            <Button onClick={() => navigate('/recommendations')}>
-              Start Shopping
+            <Button onClick={() => navigate('/finder')}>
+              Find Accessories
             </Button>
           </Card>
         ) : (
@@ -106,9 +110,11 @@ const CartPage: React.FC = () => {
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h3 className="text-xl font-bold mb-1">{item.accessory_name}</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {item.car_brand} - {item.car_model}
-                          </p>
+                          {(item.car_brand || item.car_model) && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {item.car_brand} {item.car_model && `- ${item.car_model}`}
+                            </p>
+                          )}
                         </div>
                         <Button
                           variant="ghost"
@@ -121,13 +127,19 @@ const CartPage: React.FC = () => {
 
                       {/* Badges */}
                       <div className="flex flex-wrap gap-2 mb-4">
-                        <Badge variant="outline">{item.sentiment_label}</Badge>
-                        <Badge variant="outline" className="capitalize">
-                          {item.dominant_emotion}
-                        </Badge>
-                        <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white">
-                          {item.final_score.toFixed(1)}% Match
-                        </Badge>
+                        {item.sentiment_label && (
+                          <Badge variant="outline">{item.sentiment_label}</Badge>
+                        )}
+                        {item.dominant_emotion && (
+                          <Badge variant="outline" className="capitalize">
+                            {item.dominant_emotion}
+                          </Badge>
+                        )}
+                        {item.final_score && (
+                          <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white">
+                            {item.final_score.toFixed(1)}% Match
+                          </Badge>
+                        )}
                       </div>
 
                       {/* Price and Quantity */}

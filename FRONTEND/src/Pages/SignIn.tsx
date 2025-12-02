@@ -4,6 +4,7 @@ import { Car, Mail, Lock, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { useAuth } from '../context/AuthContext';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -11,6 +12,7 @@ export default function SignIn() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,11 +20,13 @@ export default function SignIn() {
     setLoading(true);
 
     try {
-      // Simulate a successful sign-in for now
-      // TODO: Replace with your actual authentication logic
-      console.log('Simulating sign in for:', email);
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-      navigate('/finder');
+      const result = await login(email, password);
+      
+      if (result.success) {
+        navigate('/finder');
+      } else {
+        setError(result.message || 'Failed to sign in. Please check your credentials.');
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to sign in. Please check your credentials.');
     } finally {

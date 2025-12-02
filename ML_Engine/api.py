@@ -3,13 +3,15 @@
 RESTful API for personalized accessory recommendations
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Dict, Optional
 import uvicorn
 from recommendation_engine import PersonalizedRecommendationEngine
 import pandas as pd
+from auth import UserAuth, SessionManager, AuthenticationError
+from db_helpers import CartDB, WishlistDB, OrderDB, AccessoryDB
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -496,8 +498,332 @@ async def demo_recommendations():
     }
 
 
+# ==================== AUTHENTICATION MODELS ====================
+
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class AuthResponse(BaseModel):
+    success: bool
+    user_id: Optional[int] = None
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    token: Optional[str] = None
+    message: str
+
+
+# ==================== CART/WISHLIST MODELS ====================
+
+class CartItemRequest(BaseModel):
+    accessory_id: str
+    quantity: int = 1
+
+
+class CartUpdateRequest(BaseModel):
+    accessory_id: str
+    quantity: int
+
+
+class WishlistItemRequest(BaseModel):
+    accessory_id: str
+
+
+# ==================== ORDER MODELS ====================
+
+class DeliveryInfo(BaseModel):
+    full_name: str
+    email: str
+    phone: str
+    address: str
+    city: str
+    state: str
+    pincode: str
+
+
+class OrderRequest(BaseModel):
+    delivery_info: DeliveryInfo
+    payment_method: str = Field(..., description="card, upi, or cod")
+
+
+# ==================== HELPER FUNCTIONS ====================
+
+def get_current_user(authorization: Optional[str] = Header(None)) -> int:
+    """
+    Dependency to get current user from authorization header
+    Authorization: Bearer <token>
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header required")
+    
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != 'bearer':
+            raise HTTPException(status_code=401, detail="Invalid authentication scheme")
+        
+        user_id = SessionManager.validate_session(token)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+        
+        return user_id
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid authorization header format")
+
+
+# ==================== AUTHENTICATION ENDPOINTS ====================
+
+@app.post("/auth/signup", response_model=AuthResponse)
+async def signup(request: SignupRequest):
+    """Register a new user"""
+    try:
+        result = UserAuth.signup(
+            email=request.email,
+            password=request.password,
+            full_name=request.full_name,
+            phone=request.phone
+        )
+        
+        # Create session token
+        token = SessionManager.create_session(result['user_id'])
+        
+        return AuthResponse(
+            success=True,
+            user_id=result['user_id'],
+            email=result['email'],
+            full_name=result['full_name'],
+            token=token,
+            message=result['message']
+        )
+    except AuthenticationError as e:
+        return AuthResponse(success=False, message=str(e))
+    except Exception as e:
+        return AuthResponse(success=False, message=f"Signup failed: {str(e)}")
+
+
+@app.post("/auth/login", response_model=AuthResponse)
+async def login(request: LoginRequest):
+    """Login user and create session"""
+    try:
+        result = UserAuth.login(
+            email=request.email,
+            password=request.password
+        )
+        
+        # Create session token
+        token = SessionManager.create_session(result['user_id'])
+        
+        return AuthResponse(
+            success=True,
+            user_id=result['user_id'],
+            email=result['email'],
+            full_name=result['full_name'],
+            token=token,
+            message=result['message']
+        )
+    except AuthenticationError as e:
+        return AuthResponse(success=False, message=str(e))
+    except Exception as e:
+        return AuthResponse(success=False, message=f"Login failed: {str(e)}")
+
+
+@app.post("/auth/logout")
+async def logout(authorization: Optional[str] = Header(None)):
+    """Logout user and invalidate session"""
+    if not authorization:
+        return {"success": True, "message": "No active session"}
+    
+    try:
+        scheme, token = authorization.split()
+        SessionManager.delete_session(token)
+        return {"success": True, "message": "Logged out successfully"}
+    except:
+        return {"success": True, "message": "Logged out"}
+
+
+@app.get("/auth/me")
+async def get_current_user_info(user_id: int = Depends(get_current_user)):
+    """Get current user information"""
+    user = UserAuth.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"success": True, "user": user}
+
+
+# ==================== CART ENDPOINTS ====================
+
+@app.get("/cart")
+async def get_cart(user_id: int = Depends(get_current_user)):
+    """Get user's cart items"""
+    items = CartDB.get_cart_items(user_id)
+    total = CartDB.get_cart_total(user_id)
+    count = CartDB.get_cart_count(user_id)
+    
+    return {
+        "success": True,
+        "items": items,
+        "total": total,
+        "count": count
+    }
+
+
+@app.post("/cart")
+async def add_to_cart(
+    request: CartItemRequest,
+    user_id: int = Depends(get_current_user)
+):
+    """Add item to cart"""
+    result = CartDB.add_to_cart(user_id, request.accessory_id, request.quantity)
+    return result
+
+
+@app.put("/cart")
+async def update_cart_item(
+    request: CartUpdateRequest,
+    user_id: int = Depends(get_current_user)
+):
+    """Update cart item quantity"""
+    result = CartDB.update_cart_quantity(user_id, request.accessory_id, request.quantity)
+    return result
+
+
+@app.delete("/cart/{accessory_id}")
+async def remove_from_cart(
+    accessory_id: str,
+    user_id: int = Depends(get_current_user)
+):
+    """Remove item from cart"""
+    result = CartDB.remove_from_cart(user_id, accessory_id)
+    return result
+
+
+@app.delete("/cart")
+async def clear_cart(user_id: int = Depends(get_current_user)):
+    """Clear all items from cart"""
+    result = CartDB.clear_cart(user_id)
+    return result
+
+
+# ==================== WISHLIST ENDPOINTS ====================
+
+@app.get("/wishlist")
+async def get_wishlist(user_id: int = Depends(get_current_user)):
+    """Get user's wishlist items"""
+    items = WishlistDB.get_wishlist_items(user_id)
+    count = WishlistDB.get_wishlist_count(user_id)
+    
+    return {
+        "success": True,
+        "items": items,
+        "count": count
+    }
+
+
+@app.post("/wishlist")
+async def add_to_wishlist(
+    request: WishlistItemRequest,
+    user_id: int = Depends(get_current_user)
+):
+    """Add item to wishlist"""
+    result = WishlistDB.add_to_wishlist(user_id, request.accessory_id)
+    return result
+
+
+@app.delete("/wishlist/{accessory_id}")
+async def remove_from_wishlist(
+    accessory_id: str,
+    user_id: int = Depends(get_current_user)
+):
+    """Remove item from wishlist"""
+    result = WishlistDB.remove_from_wishlist(user_id, accessory_id)
+    return result
+
+
+@app.delete("/wishlist")
+async def clear_wishlist(user_id: int = Depends(get_current_user)):
+    """Clear all items from wishlist"""
+    result = WishlistDB.clear_wishlist(user_id)
+    return result
+
+
+# ==================== ORDER ENDPOINTS ====================
+
+@app.post("/orders")
+async def create_order(
+    request: OrderRequest,
+    user_id: int = Depends(get_current_user)
+):
+    """Create a new order from cart items"""
+    # Get cart items
+    cart_items = CartDB.get_cart_items(user_id)
+    
+    if not cart_items:
+        return {"success": False, "message": "Cart is empty"}
+    
+    # Calculate totals
+    subtotal = sum(item['price'] * item['quantity'] for item in cart_items)
+    delivery_charge = 0 if subtotal >= 500 else 50
+    total_amount = subtotal + delivery_charge
+    
+    # Prepare items for order
+    order_items = [
+        {
+            'accessory_id': item['accessory_id'],
+            'accessory_name': item['accessory_name'],
+            'quantity': item['quantity'],
+            'price': item['price']
+        }
+        for item in cart_items
+    ]
+    
+    # Create order
+    result = OrderDB.create_order(
+        user_id=user_id,
+        cart_items=order_items,
+        total_amount=total_amount,
+        delivery_charge=delivery_charge,
+        delivery_info=request.delivery_info.dict(),
+        payment_method=request.payment_method
+    )
+    
+    return result
+
+
+@app.get("/orders/{order_number}")
+async def get_order(
+    order_number: str,
+    user_id: int = Depends(get_current_user)
+):
+    """Get order details by order number"""
+    order = OrderDB.get_order_by_number(order_number)
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Verify order belongs to user
+    if order['user_id'] != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    return {"success": True, "order": order}
+
+
+@app.get("/orders")
+async def get_user_orders(user_id: int = Depends(get_current_user)):
+    """Get all orders for current user"""
+    orders = OrderDB.get_user_orders(user_id)
+    return {"success": True, "orders": orders, "count": len(orders)}
+
+
+# ==================== RUN SERVER ====================
 if __name__ == "__main__":
     print("🚀 Starting Recommendation Engine API Server...")
-    print("📝 API Documentation: http://localhost:8000/docs")
-    print("🔍 Interactive API: http://localhost:8000/redoc")
+    print(f"📝 API Documentation: http://localhost:8000/docs")
+    print(f"🔍 Interactive API: http://localhost:8000/redoc")
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

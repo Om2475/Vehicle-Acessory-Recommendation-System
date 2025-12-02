@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import LandingPage from './Pages/LandingPage';
@@ -12,28 +13,36 @@ import WishlistPage from './Pages/WishlistPage';
 import CheckoutPage from './Pages/CheckoutPage';
 import OrderSuccessPage from './Pages/OrderSuccessPage';
 
-function App() {
-  // No authentication, so no user or loading state needed
-
+function AppRoutes() {
+  const { user } = useAuth();
+  
   return (
-    <WishlistProvider>
-      <CartProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/finder" element={<RecommendationFinder user={null} />} />
-            <Route path="/results" element={<Results user={null} />} />
-            <Route path="/buy" element={<BuyPage />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/wishlist" element={<WishlistPage user={null} />} />
-            <Route path="/checkout" element={<CheckoutPage user={null} />} />
-            <Route path="/order-success" element={<OrderSuccessPage user={null} />} />
-          </Routes>
-        </Router>
-      </CartProvider>
-    </WishlistProvider>
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/signin" element={<SignIn />} />
+      <Route path="/signup" element={<SignUp />} />
+      <Route path="/finder" element={<RecommendationFinder user={user} />} />
+      <Route path="/results" element={<Results user={user} />} />
+      <Route path="/buy" element={<BuyPage />} />
+      <Route path="/cart" element={<CartPage />} />
+      <Route path="/wishlist" element={<WishlistPage user={user} />} />
+      <Route path="/checkout" element={<CheckoutPage user={user} />} />
+      <Route path="/order-success" element={<OrderSuccessPage user={user} />} />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <WishlistProvider>
+        <CartProvider>
+          <Router>
+            <AppRoutes />
+          </Router>
+        </CartProvider>
+      </WishlistProvider>
+    </AuthProvider>
   );
 }
 

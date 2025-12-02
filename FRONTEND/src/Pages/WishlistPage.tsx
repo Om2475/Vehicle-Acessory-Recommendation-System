@@ -23,7 +23,7 @@ interface WishlistPageProps {
 
 const WishlistPage: React.FC<WishlistPageProps> = ({ user }) => {
   const navigate = useNavigate();
-  const { wishlistItems, removeFromWishlist, clearWishlist } = useWishlist();
+  const { wishlistItems = [], removeFromWishlist, clearWishlist } = useWishlist();
   const { addToCart } = useCart();
 
   const handleRemoveItem = (accessoryId: string, name: string) => {
@@ -133,14 +133,18 @@ const WishlistPage: React.FC<WishlistPageProps> = ({ user }) => {
                   <div className="p-5 space-y-4">
                     {/* Badges */}
                     <div className="flex flex-wrap gap-2">
-                      <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white">
-                        <Star className="h-3 w-3 mr-1" />
-                        {item.final_score.toFixed(1)}% Match
-                      </Badge>
-                      <Badge className={getSentimentColor(item.sentiment_label)}>
-                        {item.sentiment_label}
-                      </Badge>
-                      {item.quality_score >= 0.7 && (
+                      {item.final_score && (
+                        <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white">
+                          <Star className="h-3 w-3 mr-1" />
+                          {item.final_score.toFixed(1)}% Match
+                        </Badge>
+                      )}
+                      {item.sentiment_label && (
+                        <Badge className={getSentimentColor(item.sentiment_label)}>
+                          {item.sentiment_label}
+                        </Badge>
+                      )}
+                      {item.quality_score && item.quality_score >= 0.7 && (
                         <Badge className="bg-green-500 text-white">
                           <Sparkles className="h-3 w-3 mr-1" />
                           High Quality
@@ -153,15 +157,19 @@ const WishlistPage: React.FC<WishlistPageProps> = ({ user }) => {
                       <h3 className="text-xl font-bold mb-1 line-clamp-2 group-hover:text-red-600 transition-colors">
                         {item.accessory_name}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {item.car_brand} - {item.car_model}
-                      </p>
+                      {(item.car_brand || item.car_model) && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {item.car_brand} {item.car_model && `- ${item.car_model}`}
+                        </p>
+                      )}
                     </div>
 
                     {/* Description */}
-                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                      {item.description}
-                    </p>
+                    {item.description && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                        {item.description}
+                      </p>
+                    )}
 
                     {/* Price */}
                     <div className="text-2xl font-bold text-red-600">

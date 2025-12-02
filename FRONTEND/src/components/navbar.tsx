@@ -4,21 +4,26 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { useAuth } from '../context/AuthContext';
 
 interface NavbarProps {
   user?: any;
 }
 
-export default function Navbar({ user }: NavbarProps) {
+export default function Navbar({ user: propUser }: NavbarProps) {
   const navigate = useNavigate();
+  const { user: authUser, logout } = useAuth();
   const { getCartCount } = useCart();
   const { getWishlistCount } = useWishlist();
+  
+  // Use auth context user if available, otherwise fall back to prop
+  const user = authUser || propUser;
+  
   const cartCount = getCartCount();
   const wishlistCount = getWishlistCount();
 
   const handleLogout = () => {
-    // TODO: Implement actual logout logic
-    console.log('Simulating logout');
+    logout();
     navigate('/');
   };
 

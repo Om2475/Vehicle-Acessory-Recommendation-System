@@ -4,16 +4,19 @@ import { Car, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { useAuth } from '../context/AuthContext';
 
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { signup } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,11 +35,20 @@ export default function SignUp() {
 
     setLoading(true);
 
-    // Simulate account creation
-    setTimeout(() => {
-      setSuccess('Account created successfully! Redirecting...');
-      setTimeout(() => navigate('/finder'), 1500);
-    }, 1000);
+    try {
+      const result = await signup(email, password, fullName);
+      
+      if (result.success) {
+        setSuccess('Account created successfully! Redirecting...');
+        setTimeout(() => navigate('/finder'), 1500);
+      } else {
+        setError(result.message || 'Signup failed. Please try again.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Signup failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -72,6 +84,21 @@ export default function SignUp() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="fullName" className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Full Name
+              </Label>
+              <Input
+                id="fullName"
+                type="text"
+                placeholder="John Doe"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="h-12"
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email" className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />

@@ -7,6 +7,13 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Separator } from '../components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 import { toast } from 'sonner';
 import {
   CreditCard,
@@ -22,6 +29,87 @@ import {
   Building,
 } from 'lucide-react';
 import Navbar from '../components/navbar';
+
+const indianStates = [
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
+  'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+  'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+  'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi', 'Puducherry'
+];
+
+const majorCities = [
+  'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Ahmedabad', 'Chennai',
+  'Kolkata', 'Surat', 'Pune', 'Jaipur', 'Lucknow', 'Kanpur',
+  'Nagpur', 'Indore', 'Thane', 'Bhopal', 'Visakhapatnam', 'Patna',
+  'Vadodara', 'Ghaziabad', 'Ludhiana', 'Agra', 'Nashik', 'Faridabad',
+  'Meerut', 'Rajkot', 'Varanasi', 'Srinagar', 'Aurangabad', 'Dhanbad'
+];
+
+// City to State mapping
+const cityToState: { [key: string]: string } = {
+  'Mumbai': 'Maharashtra', 'Pune': 'Maharashtra', 'Nagpur': 'Maharashtra', 'Thane': 'Maharashtra', 'Nashik': 'Maharashtra', 'Aurangabad': 'Maharashtra',
+  'Delhi': 'Delhi',
+  'Bangalore': 'Karnataka',
+  'Hyderabad': 'Telangana',
+  'Ahmedabad': 'Gujarat', 'Surat': 'Gujarat', 'Vadodara': 'Gujarat', 'Rajkot': 'Gujarat',
+  'Chennai': 'Tamil Nadu',
+  'Kolkata': 'West Bengal',
+  'Jaipur': 'Rajasthan',
+  'Lucknow': 'Uttar Pradesh', 'Kanpur': 'Uttar Pradesh', 'Ghaziabad': 'Uttar Pradesh', 'Agra': 'Uttar Pradesh', 'Meerut': 'Uttar Pradesh', 'Varanasi': 'Uttar Pradesh', 'Faridabad': 'Uttar Pradesh',
+  'Indore': 'Madhya Pradesh', 'Bhopal': 'Madhya Pradesh',
+  'Visakhapatnam': 'Andhra Pradesh', 'Patna': 'Bihar',
+  'Ludhiana': 'Punjab',
+  'Srinagar': 'Jammu and Kashmir',
+  'Dhanbad': 'Jharkhand'
+};
+
+// Pincode ranges to state/city mapping (simplified)
+const getPincodeInfo = (pincode: string): { city: string; state: string } | null => {
+  const pin = parseInt(pincode);
+  if (isNaN(pin) || pincode.length !== 6) return null;
+
+  // Maharashtra
+  if ((pin >= 400000 && pin <= 445000)) {
+    if (pin >= 400000 && pin <= 400100) return { city: 'Mumbai', state: 'Maharashtra' };
+    if (pin >= 411000 && pin <= 412000) return { city: 'Pune', state: 'Maharashtra' };
+    if (pin >= 440000 && pin <= 441000) return { city: 'Nagpur', state: 'Maharashtra' };
+    return { city: '', state: 'Maharashtra' };
+  }
+  // Delhi
+  if (pin >= 110000 && pin <= 110100) return { city: 'Delhi', state: 'Delhi' };
+  // Karnataka
+  if (pin >= 560000 && pin <= 560100) return { city: 'Bangalore', state: 'Karnataka' };
+  // Telangana
+  if (pin >= 500000 && pin <= 509000) return { city: 'Hyderabad', state: 'Telangana' };
+  // Gujarat
+  if (pin >= 380000 && pin <= 389000) {
+    if (pin >= 380000 && pin <= 380100) return { city: 'Ahmedabad', state: 'Gujarat' };
+    if (pin >= 395000 && pin <= 395100) return { city: 'Surat', state: 'Gujarat' };
+    return { city: '', state: 'Gujarat' };
+  }
+  // Tamil Nadu
+  if (pin >= 600000 && pin <= 643000) {
+    if (pin >= 600000 && pin <= 600100) return { city: 'Chennai', state: 'Tamil Nadu' };
+    return { city: '', state: 'Tamil Nadu' };
+  }
+  // West Bengal
+  if (pin >= 700000 && pin <= 743000) return { city: 'Kolkata', state: 'West Bengal' };
+  // Rajasthan
+  if (pin >= 302000 && pin <= 302100) return { city: 'Jaipur', state: 'Rajasthan' };
+  // Uttar Pradesh
+  if (pin >= 201000 && pin <= 285000) {
+    if (pin >= 226000 && pin <= 226100) return { city: 'Lucknow', state: 'Uttar Pradesh' };
+    if (pin >= 208000 && pin <= 208100) return { city: 'Kanpur', state: 'Uttar Pradesh' };
+    return { city: '', state: 'Uttar Pradesh' };
+  }
+  // Madhya Pradesh
+  if (pin >= 452000 && pin <= 452100) return { city: 'Indore', state: 'Madhya Pradesh' };
+  if (pin >= 462000 && pin <= 462100) return { city: 'Bhopal', state: 'Madhya Pradesh' };
+  
+  return null;
+};
 
 interface CheckoutPageProps {
   user: any;
@@ -52,9 +140,50 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ user }) => {
   const totalAmount = getCartTotal() + deliveryCharge;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
+    });
+
+    // Auto-fill state/city based on pincode
+    if (name === 'pincode' && value.length === 6) {
+      const pincodeInfo = getPincodeInfo(value);
+      if (pincodeInfo) {
+        setFormData(prev => ({
+          ...prev,
+          pincode: value,
+          state: pincodeInfo.state,
+          city: pincodeInfo.city || prev.city,
+        }));
+        if (pincodeInfo.city) {
+          toast.success(`Auto-filled: ${pincodeInfo.city}, ${pincodeInfo.state}`);
+        } else {
+          toast.success(`Auto-filled state: ${pincodeInfo.state}`);
+        }
+      }
+    }
+  };
+
+  // Handle city selection - auto-fill state
+  const handleCityChange = (city: string) => {
+    const state = cityToState[city] || '';
+    setFormData({
+      ...formData,
+      city,
+      state,
+    });
+    if (state) {
+      toast.success(`Auto-filled state: ${state}`);
+    }
+  };
+
+  // Handle state selection
+  const handleStateChange = (state: string) => {
+    setFormData({
+      ...formData,
+      state,
     });
   };
 
@@ -76,25 +205,54 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ user }) => {
 
     setIsProcessing(true);
 
-    // Simulate order processing
-    setTimeout(() => {
-      // Clear cart
-      clearCart();
+    try {
+      const token = localStorage.getItem('auth_token');
       
-      // Show success message
-      toast.success('Order placed successfully! 🎉');
-      
-      // Navigate to order confirmation
-      setIsProcessing(false);
-      navigate('/order-success', { 
-        state: { 
-          orderNumber: `ORD-${Date.now()}`,
-          totalAmount,
-          itemCount: cartItems.length,
-          deliveryAddress: `${formData.address}, ${formData.city}, ${formData.state} - ${formData.pincode}`,
-        } 
+      // Place order via API
+      const response = await fetch('http://localhost:8000/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          delivery_info: {
+            full_name: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            address: formData.address,
+            city: formData.city,
+            state: formData.state,
+            pincode: formData.pincode,
+          },
+          payment_method: paymentMethod,
+        }),
       });
-    }, 2000);
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Clear cart (will also clear on server)
+        clearCart();
+        
+        // Show success message
+        toast.success('Order Placed Successfully! 🎉', {
+          duration: 3000,
+        });
+        
+        // Redirect to finder page after 2 seconds
+        setTimeout(() => {
+          navigate('/finder');
+        }, 2000);
+      } else {
+        toast.error(data.message || 'Failed to place order');
+      }
+    } catch (error) {
+      console.error('Order error:', error);
+      toast.error('Failed to place order. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (cartItems.length === 0) {
@@ -199,25 +357,39 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ user }) => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="city">City *</Label>
-                    <Input
-                      id="city"
-                      name="city"
-                      placeholder="Mumbai"
+                    <Select
                       value={formData.city}
-                      onChange={handleInputChange}
-                      required
-                    />
+                      onValueChange={handleCityChange}
+                    >
+                      <SelectTrigger id="city">
+                        <SelectValue placeholder="Select City" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {majorCities.map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="state">State *</Label>
-                    <Input
-                      id="state"
-                      name="state"
-                      placeholder="Maharashtra"
+                    <Select
                       value={formData.state}
-                      onChange={handleInputChange}
-                      required
-                    />
+                      onValueChange={handleStateChange}
+                    >
+                      <SelectTrigger id="state">
+                        <SelectValue placeholder="Select State" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {indianStates.map((state) => (
+                          <SelectItem key={state} value={state}>
+                            {state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="pincode">Pincode *</Label>
@@ -227,6 +399,8 @@ const CheckoutPage: React.FC<CheckoutPageProps> = ({ user }) => {
                       placeholder="400001"
                       value={formData.pincode}
                       onChange={handleInputChange}
+                      maxLength={6}
+                      pattern="[0-9]{6}"
                       required
                     />
                   </div>

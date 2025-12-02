@@ -14,6 +14,12 @@ nltk>=3.8.0
 textblob>=0.17.0
 vaderSentiment>=3.3.0
 
+# Phase 3: API & Database
+fastapi>=0.104.1
+uvicorn>=0.24.0
+python-multipart>=0.0.6
+bcrypt>=4.0.1
+
 # Utilities
 python-dotenv>=1.0.0
 tqdm>=4.66.0

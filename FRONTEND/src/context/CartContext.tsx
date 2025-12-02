@@ -13,9 +13,12 @@ interface CartContextType {
   clearCart: () => void;
   getCartTotal: () => number;
   getCartCount: () => number;
+  syncWithServer: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+const API_BASE_URL = 'http://localhost:8000';
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
@@ -24,37 +27,146 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
-  // Save cart to localStorage whenever it changes
+  // Get auth token
+  const getToken = () => localStorage.getItem('auth_token');
+
+  // Sync with server on mount if user is logged in
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      syncWithServer();
+    }
+  }, []);
+
+  // Save cart to localStorage whenever it changes (fallback for non-logged-in users)
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
-  const addToCart = (item: AccessoryRecommendation) => {
+  // Sync cart with server
+  const syncWithServer = async () => {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/cart`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.items) {
+          setCartItems(data.items);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to sync cart with server:', error);
+    }
+  };
+
+  const addToCart = async (item: AccessoryRecommendation) => {
+    const token = getToken();
+    
+    // If user is logged in, sync with server
+    if (token) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/cart`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            accessory_id: item.accessory_id,
+            quantity: 1,
+          }),
+        });
+
+        if (response.ok) {
+          await syncWithServer();
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to add to cart on server:', error);
+      }
+    }
+
+    // Fallback to localStorage for non-logged-in users
     setCartItems((prev) => {
       const existingItem = prev.find((i) => i.accessory_id === item.accessory_id);
       if (existingItem) {
-        // Increase quantity if item already in cart
         return prev.map((i) =>
           i.accessory_id === item.accessory_id
             ? { ...i, quantity: i.quantity + 1 }
             : i
         );
       } else {
-        // Add new item with quantity 1
         return [...prev, { ...item, quantity: 1 }];
       }
     });
   };
 
-  const removeFromCart = (accessoryId: string) => {
+  const removeFromCart = async (accessoryId: string) => {
+    const token = getToken();
+    
+    // If user is logged in, sync with server
+    if (token) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/cart/${accessoryId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          await syncWithServer();
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to remove from cart on server:', error);
+      }
+    }
+
+    // Fallback to localStorage
     setCartItems((prev) => prev.filter((item) => item.accessory_id !== accessoryId));
   };
 
-  const updateQuantity = (accessoryId: string, quantity: number) => {
+  const updateQuantity = async (accessoryId: string, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(accessoryId);
+      await removeFromCart(accessoryId);
       return;
     }
+
+    const token = getToken();
+    
+    // If user is logged in, sync with server
+    if (token) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/cart`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            accessory_id: accessoryId,
+            quantity,
+          }),
+        });
+
+        if (response.ok) {
+          await syncWithServer();
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to update cart on server:', error);
+      }
+    }
+
+    // Fallback to localStorage
     setCartItems((prev) =>
       prev.map((item) =>
         item.accessory_id === accessoryId ? { ...item, quantity } : item
@@ -62,7 +174,29 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
-  const clearCart = () => {
+  const clearCart = async () => {
+    const token = getToken();
+    
+    // If user is logged in, sync with server
+    if (token) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/cart`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          setCartItems([]);
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to clear cart on server:', error);
+      }
+    }
+
+    // Fallback to localStorage
     setCartItems([]);
   };
 
@@ -84,6 +218,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearCart,
         getCartTotal,
         getCartCount,
+        syncWithServer,
       }}
     >
       {children}

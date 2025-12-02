@@ -7,7 +7,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-green)]()
 [![React](https://img.shields.io/badge/React-18.3.1-blue)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6.2-blue)]()
-[![Database](https://img.shields.io/badge/Database-Ready%20to%20Implement-orange)]()
+[![Database](https://img.shields.io/badge/Database-SQLite%20%7C%20Implemented-brightgreen)]()
 
 ---
 
@@ -187,15 +187,44 @@ Combines 5 scoring factors:
                   │
                   ↓ Data Layer
 ┌─────────────────────────────────────────────────────────────────┐
-│                    DATASET (Processed CSV Files)                │
-│  - Accessories: 1,739 items (1.21 MB)                          │
-│  - Cars: 205 vehicles                                           │
-│  - Brands: 64 manufacturers                                     │
-│  - Categories: 11 types                                         │
-│  - Features: 43 per accessory                                   │
-│  - TF-IDF: 100 text features                                   │
+│                   DATABASE (SQLite - Persistent Storage)        │
+│  - Tables: 7 (users, accessories, cart, wishlist, orders, etc) │
+│  - Accessories: 1,269 items with ML features                   │
+│  - Authentication: Bcrypt password hashing                      │
+│  - Persistent cart & wishlist per user                          │
+│  - Order tracking & history                                     │
+│  - File: vehicle_accessories.db (~3.5 MB)                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 🗄️ Database Architecture
+
+### **Implemented: SQLite Database**
+
+✅ **Status:** Fully implemented and tested
+
+**7 Tables:**
+1. **`accessories`** (1,269 records) - Product catalog with ML features
+2. **`users`** - User accounts with secure authentication
+3. **`cart_items`** - Persistent shopping cart per user
+4. **`wishlist`** - Saved items per user  
+5. **`orders`** - Order tracking & history
+6. **`order_items`** - Order details
+7. **`user_profiles`** - User preferences & defaults
+
+**Features:**
+- ✅ Secure password hashing with bcrypt
+- ✅ Session-based authentication with tokens
+- ✅ Persistent cart & wishlist (survive browser clears)
+- ✅ Complete order management system
+- ✅ Fast queries with proper indexing
+- ✅ Foreign key constraints for data integrity
+
+**API Endpoints:** 20+ endpoints for auth, cart, wishlist, orders
+
+📄 **Full Documentation:** See [DATABASE_IMPLEMENTATION_SUMMARY.md](DATABASE_IMPLEMENTATION_SUMMARY.md)
 
 ---
 

@@ -3,11 +3,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { AccessoryRecommendation } from '../lib/api';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Card } from '../components/ui/card';
 import { Separator } from '../components/ui/separator';
 import { toast } from 'sonner';
+import Navbar from '../components/navbar';
 import {
   ShoppingCart,
   Heart,
@@ -27,6 +29,7 @@ import {
 const BuyPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const accessory = location.state?.accessory as AccessoryRecommendation;
@@ -89,8 +92,10 @@ const BuyPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 dark:from-gray-900 dark:to-gray-800">
+      <Navbar user={user} />
+      
       {/* Back Button */}
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-24">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
           <ChevronLeft className="mr-2 h-4 w-4" />
           Back to Results

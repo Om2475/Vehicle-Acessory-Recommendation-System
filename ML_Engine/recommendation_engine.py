@@ -546,7 +546,7 @@ class PersonalizedRecommendationEngine:
         
         # Diversity-aware selection
         # Simply take top K without category diversity
-        selected = sorted_indices[:top_k].tolist()
+        selected = sorted_indices[:top_k]
         
         return selected
     
